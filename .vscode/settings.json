@@ -1,0 +1,13 @@
+{
+  "clangd.arguments": [
+    "--background-index",
+    "--header-insertion=never",
+    "--compile-commands-dir=${workspaceFolder}/build"
+  ],
+  "C_Cpp.clang_format_style": "file",
+  "C_Cpp.formatting": "clangFormat",
+  "cmake.sourceDirectory": "${workspaceFolder}",
+  "files.associations": {
+    "*.dox": "doxygen"
+  }
+}

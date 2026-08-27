@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "fcpp: format-check",
+      "type": "shell",
+      "command": "clang-format --dry-run --Werror include/ src/",
+      "problemMatcher": []
+    },
+    {
+      "label": "fcpp: tidy",
+      "type": "shell",
+      "command": "clang-tidy src/*.cpp -- -std=c++17",
+      "problemMatcher": []
+    },
+    {
+      "label": "fcpp: schema-check",
+      "type": "shell",
+      "command": "npx ajv validate -s metadata.schema.json -d metadata.json --spec=draft7",
+      "problemMatcher": []
+    },
+    {
+      "label": "fcpp: commit-lint",
+      "type": "shell",
+      "command": "npx commitlint --from HEAD~1 --to HEAD",
+      "problemMatcher": []
+    },
+    {
+      "label": "fcpp: test",
+      "type": "shell",
+      "command": "conan create . -s build_type=Debug --build=missing",
+      "problemMatcher": []
+    }
+  ]
+}
