@@ -62,4 +62,6 @@ conan create . -s build_type=Debug --build=missing
 
 ## 回退（Rollback）
 
-CI/发布异常回退命令见 `wokspace/REMEDIATION-PLAN.md` §7。
+- 撤销远端分支/tag：`git push origin --delete <branch> <tag>`
+- 本地回退到整改前：`git checkout main && git branch -D <branch> && git tag -d <tag>`
+- CI 红定位：Actions UI 或 `gh run list`（需 `gh auth login`）

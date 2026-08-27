@@ -46,7 +46,7 @@ Wrap the `#include` area with `// Conan::ImportStart` / `// Conan::ImportEnd`; t
 ## Format / Static Checks（格式化/静态检查）
 
 - 语言族分流（私有约定，见 `conanfile.py` syntax guide #9）：`.c`/`.h` → C（`.github/misc/.clang-format-c`，`PointerAlignment: Right`）；`.hpp`/`.cpp` → C++（`.github/misc/.clang-format-cpp`，`PointerAlignment: Left`、`Standard: c++17`）。**clang-format 内置扩展映射把 `.h` 当 C++，门禁必须显式 `--style=file:` 把 `.h` 路由到 C 配置**。120 cols; no include sort; no comment reflow; `MaxEmptyLinesToKeep: 3` 保护空行规则。
-- 空行分段：全局对象间 2 空行（`\n\n\n`），模块生成 `_get_export_objects` 按 `split('\n\n')` 切分（`conanfile.py`，含 TODO）；2~3 空行均兼容，超过 3 个是违规（历史遗留见 `wokspace/REMEDIATION-PLAN.md` F3）。
+- 空行分段：全局对象间 2 空行（`\n\n\n`），模块生成 `_get_export_objects` 按 `split('\n\n')` 切分（`conanfile.py`，含 TODO）；2~3 空行均兼容，超过 3 个是违规。
 - 宏命名规则由 clang-tidy `cppcoreguidelines-macro-usage` 强制（`^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$`），不在 `.clang-format` 中。
 - `.clang-tidy`: `bugprone-*` + `performance-*` + `cppcoreguidelines-avoid-magic-numbers`; **WarningsAsErrors: '*'**. warning 即失败；`HeaderFilterRegex: "^(include|src)/"` 锚定仓库路径。
 - Local check（本地自查）:

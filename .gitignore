@@ -6,6 +6,9 @@ node_modules/
 __pycache__/
 *.pyc
 
+# process artifacts (audit/plan docs live in the working copy only)
+/wokspace/
+
 # .vscode/ recommended files ARE committed (extensions/settings/tasks)
 # personal machine settings go into .vscode/ and must not be committed
 
