@@ -86,6 +86,8 @@
 
 ## 6. Validation-only 改动（合并 main 前必须回退/剥离）
 
+> 状态：**已剥离**（本地工作树已还原，待 run #13 全绿后与最终提交一起推送）。
+
 | 文件 | 改动 | 原因 |
 |---|---|---|
 | `ci-orchestrator.yml` | `on.push.branches: [main]` → `[main, validation]` | 让 validation push 触发 orchestrator |
@@ -110,7 +112,10 @@
 | 0 | 本地 V1–V4、V6 全绿后 push validation（run #2） | ❌ controller `Read metadata.json` 失败 |
 | 1 | 定位 F2（jq `//` 陷阱）→ `fix(:bug:)` 修复 → push（run #4） | ✅ 全绿；fix 提交无 emoji → 下游全 skipped（emoji 语义实证） |
 | 2 | 三 emoji 验证提交（run #6） | ✅ Commit Lint/Schema/Controller/Tests/Build(ubuntu Debug+Release) 全绿；❌ Security 意外 skipped → 定位 F4 |
-| 3 | F4 修复（变量映射）→ push（run #7，带三 emoji） | 🔄 进行中：Commit Lint/Schema/Controller/Build(ubuntu×2)/Tests 全绿，Security Scan(MegaLinter) 已触发运行中 |
+| 3 | F4 修复（变量映射）→ push（run #7，带三 emoji） | ❌ Windows 失败（F6）+ **MegaLinter 门禁失败** → 定位 F7 |
+| 4 | F7 修复：门禁重构为确定性原生 gate → push（run #11，`:shield:`） | ❌ `libetl-dev` 在 Ubuntu noble 不存在（apt exit 100） |
+| 5 | 改用 pinned ETL 20.47.1 源码包（与 conandata 一致）→ push（run #12，`:shield:`） | ❌ clang-format gate 失败：apt 的 clang-format 18 不支持 `Language: C` 多语言段（LLVM ≥19 才支持） |
+| 6 | CI/devcontainer 统一 pin clang-format==23.1.0 → push（run #13，`:shield:`） | 🔄 观察中 |
 
 **F6（门禁新暴露的遗留问题）**: Windows Release 腿 `conan create` 失败（本仓库历史上从未跑过 Windows 构建，属潜伏性环境问题）。已标记 `continue-on-error`（advisory + 注释），Linux 腿为必过门禁；根因需 gh 登录读 runner 日志后继续排查。
 
@@ -125,6 +130,10 @@
 **F5（审计外新发现，未修复）**: orchestrator 的 `workflow_dispatch.commit_messages` 输入是桩——compute_triggers 仅对 push 事件生效，dispatch 传入的 emoji 不会触发任何流水线。建议后续把 EVENT_NAME 判断扩展为 `push|workflow_dispatch`。
 
 **F6（见上）**: Windows conan 构建历史未验证，门禁严格化后暴露失败，暂以 advisory 处理。
+
+**F7（验证循环捕获，门禁架构缺陷）**: MegaLinter 严格化后失败，本地复现锁定三因：① clang-tidy 无法解析 conan 依赖头（`Eigen/Dense`、`etl/algorithm.h` file-not-found）→ MegaLinter 无依赖上下文，永远无法通过；② `HeaderFilterRegex: "include/.*"` 未锚定，误匹配 conan 缓存路径，第三方头（zlib/etl 宏）被 WarningsAsErrors 引爆；③ 真实代码发现（doctest.cpp/cpptest.cpp 共 6 处 `std::endl`）。处置：**门禁重构**——clang-format/clang-tidy/gitleaks 改为确定性原生 gate（必过）：apt 装依赖（第三方头成为 system header）+ 锚定 `^(include|src)/` + gitleaks 二进制固定版本；MegaLinter 降为 advisory（semgrep/checkov/devskim 盲区，需 gh 登录读日志后根治）；修复全部 `std::endl`。
+
+**F8（工具链版本矩阵）**: ① Ubuntu noble 无 `libetl-dev` → ETL 用 release 源码包 20.47.1（与 conandata 对齐）；② apt clang-format 18 不支持 `Language: C` 多语言段（LLVM≥19 特性）→ CI 与 devcontainer 统一 `pip install clang-format==23.1.0`，CONTRIBUTING 声明最低版本。
 
 ## 9. CI 观察方式（本环境 gh 未登录）
 
