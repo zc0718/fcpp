@@ -5,9 +5,18 @@
   "team": "HeT-FTI",
   "license": "Apache-2.0",
   "description": "The simple description in meta",
-  "authors": ["Chen Zhang <chen2.zhang@szhittech.com>"],
-  "maintainers": ["Chen Zhang <chen2.zhang@szhittech.com>"],
-  "topics": ["build", "library", "documentation", "test"],
+  "authors": [
+    "Chen Zhang <chen2.zhang@szhittech.com>"
+  ],
+  "maintainers": [
+    "Chen Zhang <chen2.zhang@szhittech.com>"
+  ],
+  "topics": [
+    "build",
+    "library",
+    "documentation",
+    "test"
+  ],
   "url": "https://github.com/HeT-FTI/fcpp.git",
   "homepage": "https://github.com/HeT-FTI",
   "cmake_version": "4.0.1",
@@ -21,28 +30,67 @@
   "std_modules": "iostream",
   "user_modules": "",
   "dependencies": {
-    "common": {"ZLIB": ["ZLIB::ZLIB"]},
-    "c": {"PCRE2": ["pcre2::pcre2"]},
-    "cpp": {
-      "Eigen3": ["Eigen3::Eigen"],
-      "etl": ["etl::etl"]
+    "common": {
+      "ZLIB": [
+        "ZLIB::ZLIB"
+      ]
     },
-    "infra": {"GTest": ["gtest::gtest"], "pybind11": ["pybind11::module"]}
+    "c": {
+      "PCRE2": [
+        "pcre2::pcre2"
+      ]
+    },
+    "cpp": {
+      "Eigen3": [
+        "Eigen3::Eigen"
+      ],
+      "etl": [
+        "etl::etl"
+      ]
+    },
+    "infra": {
+      "GTest": [
+        "gtest::gtest"
+      ],
+      "pybind11": [
+        "pybind11::module"
+      ]
+    }
   },
-  "baremetal_white_list": ["etl", "ArduinoJson"],
+  "baremetal_white_list": [
+    "etl",
+    "ArduinoJson"
+  ],
   "graphviz_bin": "/usr/bin",
-  "doc_languages": ["en", "zh"],
-  "doc_versions": ["1.0", "2.0"],
-  "doc_doxygen_folders": ["include", "src", "docs/doxygen/dox"],
-  "doc_doxygen_suffix": ["h", "c", "hpp", "cpp", "dox", "cxx"],
-  "trigger_tests": false,
-  "saving_tests_log": false,
+  "doc_languages": [
+    "en",
+    "zh"
+  ],
+  "doc_versions": [
+    "1.0",
+    "2.0"
+  ],
+  "doc_doxygen_folders": [
+    "include",
+    "src",
+    "docs/doxygen/dox"
+  ],
+  "doc_doxygen_suffix": [
+    "h",
+    "c",
+    "hpp",
+    "cpp",
+    "dox",
+    "cxx"
+  ],
+  "trigger_tests": true,
+  "saving_tests_log": true,
   "enable_python_bindings": false,
   "workflow_triggers": {
-    "build": false,
-    "tests": false,
+    "build": true,
+    "tests": true,
     "release": false,
     "docs": false,
-    "security_scan": false
+    "security_scan": true
   }
 }
