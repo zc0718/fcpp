@@ -23,33 +23,33 @@
 
 | # | 审计发现 | 动作 | 涉及文件 | 状态 |
 |---|---|---|---|---|
-| P0-1 | canonical `type(:emoji:):` 与 commit-analyzer 不兼容（实测 PARSE FAILED） | 给 `commit-analyzer` 加 `parserOpts.headerPattern`（scope 允许 `:emoji:`） | `.releaserc.json` | ⬜ |
-| P0-2 | commit 无门禁 | orchestrator 新增 `commit-lint` job（push 校验提交区间、PR 校验 title），用 commitlint stdin 单一真源，不引入第三方 lint action | `ci-orchestrator.yml`、`commitlint.config.js` | ⬜ |
-| P0-3 | 缺 `package.json` → semantic-release 无法运行 | 新增 `package.json`（private + devDeps 锁定）+ `package-lock.json`；`semver-release.yml` 改 `npm ci` | `package.json`、`package-lock.json`、`semver-release.yml` | ⬜ |
-| P0-4 | lint 失败被 `continue-on-error` 吞掉 | 删除两处 `continue-on-error`，`APPLY_FIXES: none` 严格化 | `security-linters.yml`、`.mega-linter.yml` | ⬜ |
-| P0-5 | controller 缺省 `// true` 与全 false 开关语义歧义 | 缺字段 fail-loud（exit 1），消除静默缺省 | `metadata-controller.yml` | ⬜ |
+| P0-1 | canonical `type(:emoji:):` 与 commit-analyzer 不兼容（实测 PARSE FAILED） | 给 `commit-analyzer` 加 `parserOpts.headerPattern`（scope 允许 `:emoji:`） | `.releaserc.json` | ✅ V2 6/6 |
+| P0-2 | commit 无门禁 | orchestrator 新增 `commit-lint` job（push 校验提交区间、PR 校验 title），用 commitlint stdin 单一真源，不引入第三方 lint action | `ci-orchestrator.yml`、`commitlint.config.js` | ✅ CI 门禁 job 已运行 |
+| P0-3 | 缺 `package.json` → semantic-release 无法运行 | 新增 `package.json`（private + devDeps 锁定）+ `package-lock.json`；`semver-release.yml` 改 `npm ci` | `package.json`、`package-lock.json`、`semver-release.yml` | ✅ |
+| P0-4 | lint 失败被 `continue-on-error` 吞掉 | 删除两处 `continue-on-error`，`APPLY_FIXES: none` 严格化 | `security-linters.yml`、`.mega-linter.yml` | ✅ V7 观察 |
+| P0-5 | controller 缺省 `// true` 与全 false 开关语义歧义 | 缺字段 fail-loud（exit 1），消除静默缺省 | `metadata-controller.yml` | ✅ 修复 F2 后复验 |
 
 ### P1 — 公司标准治理面
 
 | # | 审计发现 | 动作 | 涉及文件 | 状态 |
 |---|---|---|---|---|
-| P1-1 | 配置在 `.github/misc/`，不在工具链发现链 | `.clang-format`/`.clang-tidy`/`.gitleaks.toml` 迁移到仓库根（删除 misc 副本，更新全部引用：`.mega-linter.yml`、`_shared/code-conventions.md`、`het-quality/SKILL.md`） | 移动 + 3 处引用 | ⬜ |
-| P1-2 | 治理文件整体缺失 | 新增 `CONTRIBUTING.md`、`CODEOWNERS`、PR 模板、`dependabot.yml` | 新增 4 文件 | ⬜ |
-| P1-3 | PR 零编译验证 | controller PR 事件 shift-left：build/tests 按开关无条件触发（无需 emoji） | `metadata-controller.yml` | ⬜ |
-| P1-4 | 缓存 key 引用不存在的 `conan.lock` | 改为 `hashFiles('conanfile.py','conandata.yml','metadata.json')` | `ci-build-test.yml`、`full-test-automation.yml` | ⬜ |
-| P1-5 | action 版本混用、依赖未锁 | npm 依赖全锁进 lockfile；dependabot 周更 | `dependabot.yml` | ⬜ |
-| P1-6 | metadata 无机器可读契约 | 新增 `metadata.schema.json`（draft-07，strict）+ orchestrator `schema-check` job（ajv） | `metadata.schema.json`、`ci-orchestrator.yml` | ⬜ |
-| P1-7 | 无手动逃生通道/无并发控制 | orchestrator 加 `workflow_dispatch` + `concurrency` | `ci-orchestrator.yml` | ⬜ |
-| P1-8 | 本地第一道闸缺失 | `.editorconfig` + `.pre-commit-config.yaml` | 新增 2 文件 | ⬜ |
-| P1-9 | `.gitignore` 忽略 `/.vscode/` 阻止插件化配置入库 | 解除忽略，改为提交推荐文件；新增 `node_modules/` 忽略 | `.gitignore` | ⬜ |
+| P1-1 | 配置在 `.github/misc/`，不在工具链发现链 | `.clang-format`/`.clang-tidy`/`.gitleaks.toml` 迁移到仓库根（删除 misc 副本，更新全部引用：`.mega-linter.yml`、`_shared/code-conventions.md`、`het-quality/SKILL.md`）；同时修复 F1（原配置 4 处致命错误） | 移动 + 3 处引用 | ✅ V4 |
+| P1-2 | 治理文件整体缺失 | 新增 `CONTRIBUTING.md`、`CODEOWNERS`、PR 模板、`dependabot.yml` | 新增 4 文件 | ✅ |
+| P1-3 | PR 零编译验证 | controller PR 事件 shift-left：build/tests 按开关无条件触发（无需 emoji） | `metadata-controller.yml` | ✅ |
+| P1-4 | 缓存 key 引用不存在的 `conan.lock` | 改为 `hashFiles('conanfile.py','conandata.yml','metadata.json')` | `ci-build-test.yml`、`full-test-automation.yml` | ✅ |
+| P1-5 | action 版本混用、依赖未锁 | npm 依赖全锁进 lockfile；dependabot 周更 | `dependabot.yml` | ✅ |
+| P1-6 | metadata 无机器可读契约 | 新增 `metadata.schema.json`（draft-07，strict）+ orchestrator `schema-check` job（ajv） | `metadata.schema.json`、`ci-orchestrator.yml` | ✅ CI job 已运行成功 |
+| P1-7 | 无手动逃生通道/无并发控制 | orchestrator 加 `workflow_dispatch` + `concurrency` | `ci-orchestrator.yml` | ✅ |
+| P1-8 | 本地第一道闸缺失 | `.editorconfig` + `.pre-commit-config.yaml` | 新增 2 文件 | ✅ |
+| P1-9 | `.gitignore` 忽略 `/.vscode/` 阻止插件化配置入库 | 解除忽略，改为提交推荐文件；新增 `node_modules/` 忽略 | `.gitignore` | ✅ |
 
 ### P2 — VS Code 扩展铺路
 
 | # | 事项 | 涉及文件 | 状态 |
 |---|---|---|---|
-| P2-1 | `metadata.schema.json`（P1-6 同源，扩展 IntelliSense/校验契约） | 同 P1-6 | ⬜ |
-| P2-2 | `.vscode/extensions.json` + `settings.json` + `tasks.json`（`fcpp: format-check` / `fcpp: tidy` / `fcpp: test` 任务化） | 3 文件 | ⬜ |
-| P2-3 | `.devcontainer/` 固化工具链 | `devcontainer.json` + `Dockerfile` | ⬜ |
+| P2-1 | `metadata.schema.json`（P1-6 同源，扩展 IntelliSense/校验契约） | 同 P1-6 | ✅ |
+| P2-2 | `.vscode/extensions.json` + `settings.json` + `tasks.json`（`fcpp: format-check` / `fcpp: tidy` / `fcpp: test` 任务化） | 3 文件 | ✅ |
+| P2-3 | `.devcontainer/` 固化工具链 | `devcontainer.json` + `Dockerfile` | ✅ |
 | P2-4 | org 级 reusable workflow / workflow-templates / SHA 锁定 | 计划文档（实施放 org `.github` 仓库，本仓库不落盘） | ⏸ |
 | P2-5 | SARIF 上传（`github/codeql-action/upload-sarif`） | 后续 PR，先记录 | ⏸ |
 
@@ -65,14 +65,14 @@
 
 | 验证项 | 命令/方式 | 环境 | 状态 |
 |---|---|---|---|
-| V1 commitlint 门禁配置 | `npx commitlint --from main --to HEAD --verbose`（全量新提交） | 本地 | ⬜ |
-| V2 parser 兼容（P0-1 核心） | node 脚本用 releaserc 的 headerPattern 实测 `feat(:fire:): x` 等 | 本地 | ⬜ |
-| V3 metadata schema | `npx ajv validate -s metadata.schema.json -d metadata.json --spec=draft7` | 本地 | ⬜ |
-| V4 clang-format | `pip install clang-format`（venv）后 `clang-format --dry-run --Werror include/ src/` | 本地 | ⬜ |
-| V5 clang-tidy | 本地无 clang-tidy 二进制 → 由 CI MegaLinter 门禁验证（validation push） | CI | ⬜ |
-| V6 本地构建 | `source ~/venv/build/bin/activate && conan create . -s build_type=Debug --build=missing` | 本地 | ⬜ |
-| V7 CI 端到端 | validation 分支 push（含 `:shield:`/`:building_construction:`/`:beer:` emoji + 开关打开）触发 orchestrator | GitHub | ⬜ |
-| V8 push/tag 验证 | `git push -u origin validation --tags` + `git ls-remote` 核对 | GitHub | ⬜ |
+| V1 commitlint 门禁配置 | `npx commitlint --from main --to HEAD --verbose`（12 条提交） | 本地 | ✅ 0 problems |
+| V2 parser 兼容（P0-1 核心） | node 脚本用 releaserc 的 headerPattern 实测 6 种提交形态 | 本地 | ✅ 6/6 PASS |
+| V3 metadata schema | `npx ajv validate -s metadata.schema.json -d metadata.json --spec=draft7` | 本地 | ✅ valid |
+| V4 clang-format | `pip install clang-format`（venv）后 `find ... -exec clang-format --dry-run --Werror {} +` | 本地 | ✅ exit 0 |
+| V5 clang-tidy | 本地无 clang-tidy → CI MegaLinter 门禁验证（validation push） | CI | ⏳ 观察中 |
+| V6 本地构建 | `conan create . -s build_type=Debug --build=missing` | 本地 | ✅ 构建 + 5/5 测试通过 |
+| V7 CI 端到端 | validation push 触发 orchestrator（门禁 + build/tests/security） | GitHub | 🔄 迭代中（见 §9） |
+| V8 push/tag 验证 | `git push -u origin validation --tags` + `git ls-remote` | GitHub | ✅ 分支+annotated tag 已上远端 |
 
 ## 5. Git 验证流程
 
@@ -100,8 +100,26 @@
 | 本地回退到整改前 | `git checkout main && git branch -D validation && git tag -d validation-checkpoint-1` |
 | 远端分支回退 | `git push origin --delete validation` |
 | 远端 tag 回退 | `git push origin --delete refs/tags/validation-checkpoint-1` |
-| 仅回退 validation-only 提交 | `git reset --hard HEAD~1`（validation 分支上） |
-| CI 红 → 定位 | `gh run list -b validation`（需 `gh auth login`）或 Actions UI |
+| 仅回退 validation-only 提交 | `git reset --hard <validation-only 提交前的 SHA>`（validation 分支上） |
+| CI 红 → 定位 | `gh run list -b validation`（需 `gh auth login`）；匿名可用 `curl https://api.github.com/repos/zc0718/fcpp/actions/runs`（本仓库公开） |
+
+## 8. 验证日志（Validation Log）
+
+| 轮次 | 事件 | 结果 |
+|---|---|---|
+| 0 | 本地 V1–V4、V6 全绿后 push validation（run #2） | ❌ controller `Read metadata.json` 失败 |
+| 1 | 定位 F2（jq `//` 陷阱）→ `fix(:bug:)` 修复 → push（run #4） | 🔄 观察中 |
+
+**F1（审计外新发现）**: 原 `.clang-format` 配置 4 处致命错误，从未被真实执行过：① 两个 `Language:` 键同一 YAML 文档（缺 `---` 分隔）；② `Standard: Cpp17`/`C11` 枚举非法（应 `c++17`，C 段不支持）；③ `Extensions` 未知键；④ `MacroDefinitionName` 未知键（宏命名由 clang-tidy `cppcoreguidelines-macro-usage` 负责）。已重写为合法多段配置并 `style(:art:)` 归一化全部源码；`.h` 按 clang-format 规则归入 C++ 段（仓库 C 头无指针，无影响）。
+
+**F2（验证循环捕获）**: jq `//` 把 `false` 当 falsy 处理，导致 fail-loud 检查把 `release=false`/`docs=false` 误判为"缺失"。已改 `has()` 存在性判断 + 独立取值。
+
+**F3（历史遗留，未修复）**: include/src 存在 3+ 连续空行（格式化前后数量不变），与"全局对象间恰好 2 空行"的模块生成规则不符，建议后续专门 style 提交归一化。
+
+## 9. CI 观察方式（本环境 gh 未登录）
+
+- 匿名 API：`curl -s https://api.github.com/repos/zc0718/fcpp/actions/runs?per_page=5`（公开仓库可读）
+- UI：<https://github.com/zc0718/fcpp/actions?query=branch%3Avalidation>
 
 ## 8. 后续（未纳入本次）
 
