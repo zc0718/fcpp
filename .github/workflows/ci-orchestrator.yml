@@ -20,10 +20,8 @@ concurrency:
   group: orchestrator-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-permissions:
-  # Read-only at top level; jobs that need write (release) declare it on the
-  # reusable workflow they call (semver-release.yml).
-  contents: read
+# Permissions are declared per job (read for commit-lint/schema-check; the
+# release reusable workflow carries its own write permissions).
 
 jobs:
   # Step 1: Call the metadata controller to analyze metadata.json
