@@ -3,10 +3,6 @@
   "version": "0.0.0-development",
   "private": true,
   "description": "Node-side tooling for fcpp: commit lint gates and semantic-release (private, never published to npm).",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/zc0718/fcpp.git"
-  },
   "license": "Apache-2.0",
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
