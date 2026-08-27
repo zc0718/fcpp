@@ -61,15 +61,13 @@ void test_cpp_zlib() {
     std::array<unsigned char, 128> rec{};
     uLong len_out = static_cast<uLong>(out.size());
     uLong len_rec = static_cast<uLong>(rec.size());
-    if (int compress_result = compress(out.data(), &len_out,
-                                       reinterpret_cast<const Bytef*>(in),
-                                       static_cast<uLong>(sizeof(in)));
+    if (auto compress_result =
+            compress(out.data(), &len_out, reinterpret_cast<const Bytef*>(in), static_cast<uLong>(sizeof(in)));
         compress_result != Z_OK) {
         std::cerr << "Compression failed with error code: " << compress_result << '\n';
         return;
     }
-    if (int uncompress_result = uncompress(rec.data(), &len_rec,
-                                           reinterpret_cast<const Bytef*>(out.data()), len_out);
+    if (auto uncompress_result = uncompress(rec.data(), &len_rec, reinterpret_cast<const Bytef*>(out.data()), len_out);
         uncompress_result != Z_OK) {
         std::cerr << "Decompression failed with error code: " << uncompress_result << '\n';
         return;

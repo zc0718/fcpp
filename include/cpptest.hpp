@@ -60,10 +60,10 @@ template <typename T> class Color {
   public:
     Color() = default;
     Color(T red_, T green_, T blue_) : r(red_), g(green_), b(blue_) {};
-    void set(T r, T g, T b) {
-        this->r = r;
-        this->g = g;
-        this->b = b;
+    void set(T red_, T green_, T blue_) {
+        this->r = red_;
+        this->g = green_;
+        this->b = blue_;
     };
     void print() const { std::cout << "RGB(" << r << ", " << g << ", " << b << ")\n"; };
     auto components() const { return std::make_tuple(r, g, b); };

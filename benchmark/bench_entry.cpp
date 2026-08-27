@@ -53,8 +53,7 @@ static void bench_prepare_input(void)
 	}
 }
 
-// NOSONAR: ctx 为 het_bench_core.h pFunCase ABI 的 opaque 上下文，跨语言二进制兼容所需。
-static int bench_add_case(const void * const ctx)
+static int bench_add_case(const void * const ctx) // NOSONAR: ctx 为 pFunCase ABI 的 opaque 上下文，跨语言二进制兼容所需。
 {
 	(void)ctx;
 	fcpp_vec_add_f32(bench_state().a.data(), bench_state().b.data(),
@@ -62,8 +61,7 @@ static int bench_add_case(const void * const ctx)
 	return bench_state().y[0] == (bench_state().a[0] + bench_state().b[0]);
 }
 
-// NOSONAR: ctx 为 het_bench_core.h pFunCase ABI 的 opaque 上下文，跨语言二进制兼容所需。
-static int bench_sub_case(const void * const ctx)
+static int bench_sub_case(const void * const ctx) // NOSONAR: ctx 为 pFunCase ABI 的 opaque 上下文，跨语言二进制兼容所需。
 {
 	(void)ctx;
 	fcpp_vec_sub_f32(bench_state().a.data(), bench_state().b.data(),
@@ -71,8 +69,7 @@ static int bench_sub_case(const void * const ctx)
 	return bench_state().y[0] == (bench_state().a[0] - bench_state().b[0]);
 }
 
-// NOSONAR: 必须保持 C 数组 —— BENCHMARK_IMPLEMENTATION 宏以 C 兼容聚合方式消费（.table + sizeof/count）。
-static const Case bench_table[] = {
+static const Case bench_table[] = { // NOSONAR: 必须保持 C 数组 —— BENCHMARK_IMPLEMENTATION 宏以 C 兼容聚合方式消费。
 	BENCHMARK_CASE_IMPLEMENTATION("test_add_n128", nullptr, bench_add_case, 100U),
 	BENCHMARK_CASE_IMPLEMENTATION("test_sub_n128", nullptr, bench_sub_case, 100U),
 };

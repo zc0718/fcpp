@@ -43,7 +43,7 @@ int main() {
     test_cpp_zlib();
     test_eigen();
 
-    const std::vector<int> nums = {1, 2, 3, 4, 5};
+    const std::vector nums = {1, 2, 3, 4, 5};
     const auto result = test_sum(nums);
     std::cout << "Sum: " << result << std::endl;
 

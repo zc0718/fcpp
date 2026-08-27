@@ -38,12 +38,20 @@ _hit_com_tag = re.compile(r" \* @")
 _hit_lang_tag = re.compile(rf"( \* @[a-z]+).*\[({'|'.join(_inherit_root_metadata().get('doc_languages'))})] ")
 _hit_free_tag = re.compile(r" \* [^@]+")
 _hit_file_doc = re.compile(r"\n?/\*![\s\S]*?@file[\s\S]*?@defgroup")
-_hit_since_command = re.compile(r"\n?/\*\*[\s\S]*?@since ")
+_hit_since_start = re.compile(r"\n?/\*\*")
 language_map = {'en': 'English', 'zh': 'Chinese', 'jp': 'Japanese'}
 
 # 多处分发使用的固定文件名/注解（避免字面量漂移）
 DOXYFILE_IN = 'Doxyfile.in'
 SINCE_TAG = '@since '
+
+
+def _match_since_command(block: str):
+    """线性匹配：锚定 `/**` 起始并用 str.find 定位 SINCE_TAG，避免回溯型正则。"""
+    m = _hit_since_start.match(block)
+    if m is None or SINCE_TAG not in block:
+        return None
+    return m
 
 
 def _no_recursive_clean_img(x: str):
@@ -149,8 +157,8 @@ def _ver_filter(x: list[str], ver: str) -> tuple[list[str], str]:
                 file_ver = block.split(SINCE_TAG)[1].split(' ')[0].strip()
             container.append(block+'\n//! @{')
             _need_append_end = True
-        elif _match := _hit_since_command.match(block):
-            _obj_ver = block[_match.regs[1][0]:].split(SINCE_TAG)[1].split(' ')[0]  # version getter
+        elif _match := _match_since_command(block):
+            _obj_ver = block[_match.end():].split(SINCE_TAG)[1].split(' ')[0]  # version getter
             if _ver_should_include(_obj_ver, ver):
                 container.append(block)
         else:
