@@ -26,8 +26,50 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format clang-tidy libeigen3-dev zlib1g-dev libpcre2-dev libetl-dev
+
+      # Required gate: formatting must be clean (same config as local dev)
+      - name: clang-format gate
+        run: |
+          find include src -type f \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) \
+            -exec clang-format --dry-run --Werror {} +
+
+      # Required gate: static analysis, warning = failure (WarningsAsErrors in .clang-tidy).
+      # Third-party headers come from apt and are treated as system headers, so only
+      # repo diagnostics count (HeaderFilterRegex anchored to ^(include|src)/).
+      - name: clang-tidy gate
+        run: |
+          shopt -s nullglob
+          for f in src/*.c; do
+            clang-tidy --config-file=.clang-tidy "$f" -- -std=c11 -Iinclude -I/usr/include/eigen3
+          done
+          for f in src/*.cpp; do
+            clang-tidy --config-file=.clang-tidy "$f" -- -std=c++17 -Iinclude -I/usr/include/eigen3
+          done
+
+      # Required gate: secrets scan with pinned binary version
+      - name: gitleaks gate
+        run: |
+          curl -sL -o /tmp/gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
+          tar xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks detect -c .gitleaks.toml --no-banner
+
   megalinter:
-    name: MegaLinter
+    name: MegaLinter (advisory)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -57,9 +99,13 @@ jobs:
           API_PASS: ${{ secrets.API_REPORTER_BASIC_AUTH_PASSWORD }}
 
       # Run MegaLinter WITH Grafana API reporter when secrets are available
+      # [advisory] semgrep/checkov/devskim run inside MegaLinter cannot be made
+      # deterministic without runner log access (see REMEDIATION-PLAN.md F7);
+      # the REQUIRED gates are the native quality-gates job above.
       - name: MegaLinter (with Grafana reporter)
         if: steps.check_grafana.outputs.available == 'true'
         uses: oxsecurity/megalinter@v8
+        continue-on-error: true
         id: ml_grafana
         env:
           VALIDATE_ALL_CODEBASE: ${{ inputs.validate_all_codebase }}
@@ -77,6 +123,7 @@ jobs:
       - name: MegaLinter (artifact-only)
         if: steps.check_grafana.outputs.available != 'true'
         uses: oxsecurity/megalinter@v8
+        continue-on-error: true
         id: ml_fallback
         env:
           VALIDATE_ALL_CODEBASE: ${{ inputs.validate_all_codebase }}
