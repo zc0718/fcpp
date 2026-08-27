@@ -7,7 +7,7 @@ user-invocable: true
 
 # S4 · het-quality — Quality / Security Gates（质量与安全门禁）
 
-> Facts: `.github/skills/_shared/code-conventions.md`、`.mega-linter.yml`、`.github/misc/.clang-tidy`、`.github/misc/.clang-format`。
+> Facts: `.github/skills/_shared/code-conventions.md`、`.mega-linter.yml`、`.clang-tidy`、`.clang-format`（仓库根目录）。
 
 ## Mental Model（心智模型）
 
@@ -30,7 +30,7 @@ user-invocable: true
 |------|------|------|
 | Format | clang-format (C right-aligned / C++ left-aligned, 120 cols) | include/ + src/ |
 | Static analysis | clang-tidy (bugprone/performance, WarningsAsErrors) | .h/.c/.hpp/.cpp |
-| Secrets | gitleaks (allowlist `.github/misc/.gitleaks.toml`) | repo (infra exempt) |
+| Secrets | gitleaks (allowlist `.gitleaks.toml`) | repo (infra exempt) |
 | SAST | semgrep / checkov / devskim | include/ + src/ + infra |
 
 ## Self-Help When Red（失败自救）

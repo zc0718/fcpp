@@ -16,4 +16,3 @@ CheckOptions:
     value: '0'
 WarningsAsErrors: '*'
 HeaderFilterRegex: "include/.*"
-

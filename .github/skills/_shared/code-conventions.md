@@ -1,6 +1,6 @@
 # fcpp C/C++ Code Conventions（模板私有代码规范）
 
-> Fact source: module generation in `conanfile.py`, `.github/misc/.clang-format`, `.github/misc/.clang-tidy`, `Codegen-Starter.txt`.
+> Fact source: module generation in `conanfile.py`, `.clang-format`, `.clang-tidy`, `Codegen-Starter.txt`. 配置文件位于仓库根目录（工具链自动发现），已从 `.github/misc/` 迁移。
 
 ## File Organization（文件组织）
 

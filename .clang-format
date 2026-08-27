@@ -26,4 +26,3 @@ BreakBeforeBraces: Attach
 PointerAlignment: Right
 Standard: C11
 MacroDefinitionName: '^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$'
-
