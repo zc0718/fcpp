@@ -14,7 +14,7 @@
  * @brief test function in cpp
  * @exporter
  */
-void test_hello() { std::cout << "CPP Compiler is ready!" << std::endl; };
+void test_hello() { std::cout << "CPP Compiler is ready!" << '\n'; };
 
 
 
@@ -26,7 +26,7 @@ void test_hello() { std::cout << "CPP Compiler is ready!" << std::endl; };
 void test_eigen() {
     Eigen::Matrix3d A;
     A << 1, 2, 3, 4, 5, 6, 7, 8, 9;
-    std::cout << "matrix A:\n" << A << "; Eigen Matrix test done!" << std::endl;
+    std::cout << "matrix A:\n" << A << "; Eigen Matrix test done!" << '\n';
 }
 
 
@@ -63,15 +63,15 @@ void test_cpp_zlib() {
     int compress_result =
         compress(out, &len_out, reinterpret_cast<const Bytef*>(in), static_cast<uLong>(strlen(in) + 1));
     if (compress_result != Z_OK) {
-        std::cerr << "Compression failed with error code: " << compress_result << std::endl;
+        std::cerr << "Compression failed with error code: " << compress_result << '\n';
         return;
     }
     int uncompress_result = uncompress(rec, &len_rec, reinterpret_cast<const Bytef*>(out), len_out);
     if (uncompress_result != Z_OK) {
-        std::cerr << "Decompression failed with error code: " << uncompress_result << std::endl;
+        std::cerr << "Decompression failed with error code: " << uncompress_result << '\n';
         return;
     }
     std::cout << "Original: " << in << "; Decompressed: " << reinterpret_cast<char*>(rec) << "; zlib in C++ test done!"
-              << std::endl;
+              << '\n';
 }
 #endif /* __ARM_EABI__ */
