@@ -10,3 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # apt ships v18 on ubuntu-24.04, so pin the pip build instead.
 RUN pip install --no-cache-dir --break-system-packages conan clang-format==23.1.0 \
     && conan profile detect --force
+
+# Run as the non-root devcontainer user (avoid default-root image finding).
+USER vscode

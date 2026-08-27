@@ -89,8 +89,10 @@ jobs:
 
       - name: Lint push commits
         if: github.event_name == 'push'
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
         run: |
-          FROM="${{ github.event.before }}"
+          FROM="$EVENT_BEFORE"
           if [[ "$FROM" == "0000000000000000000000000000000000000000" ]]; then
             # First push of a branch: only the last commit exists locally
             npx commitlint --config .github/misc/commitlint.config.js --from HEAD~1 --to HEAD --verbose
@@ -100,7 +102,9 @@ jobs:
 
       - name: Lint PR title
         if: github.event_name == 'pull_request'
-        run: printf '%s' "${{ github.event.pull_request.title }}" | npx commitlint --config .github/misc/commitlint.config.js
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s' "$PR_TITLE" | npx commitlint --config .github/misc/commitlint.config.js
 
   # Step 2c: Validate metadata.json against the machine-readable contract
   schema-check:
