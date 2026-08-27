@@ -22,6 +22,18 @@ import subprocess
 import sys
 from pathlib import Path
 
+# 复用 download.py 的白名单校验（同一目录，运行时 sys.path 自动包含脚本目录）。
+from download import (
+    validate_arg,
+    RE_HEX_ADDR,
+    RE_REMOTE_PATH,
+    RE_SSH_HOST,
+    RE_CFG_PATH,
+    RE_PROBE,
+    RE_DEVICE,
+    RE_SPEED,
+)
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 BENCH_DIR  = SCRIPT_DIR.parent
 ROOT_DIR   = BENCH_DIR.parent
@@ -63,6 +75,38 @@ CONAN_ARCH_MAP = {
 def load_json(path: Path) -> dict:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def _sanitize_cfg(cfg: dict) -> None:
+    """校验 bench_config.json 中进入子进程 argv 的值，非法即拒绝执行。"""
+    deploy_tool = cfg.get("deploy_tool")
+    if deploy_tool and deploy_tool not in ("adb", "ssh"):
+        print(f"[ERROR] 非法 deploy_tool: {deploy_tool!r}")
+        sys.exit(2)
+    flash_tool = cfg.get("flash_tool", "jlink")
+    if flash_tool not in ("jlink", "openocd", "pyocd"):
+        print(f"[ERROR] 非法 flash_tool: {flash_tool!r}")
+        sys.exit(2)
+
+    remote = cfg.get("remote_path")
+    if remote:
+        validate_arg(remote, RE_REMOTE_PATH, "remote_path")
+    host = cfg.get("ssh_host")
+    if host:
+        validate_arg(host, RE_SSH_HOST, "ssh_host")
+
+    for key, pattern in (
+        ("algo_flash_origin", RE_HEX_ADDR),
+        ("jlink_device", RE_DEVICE),
+        ("jlink_speed", RE_SPEED),
+        ("openocd_interface", RE_CFG_PATH),
+        ("openocd_target", RE_CFG_PATH),
+        ("pyocd_target", RE_CFG_PATH),
+        ("pyocd_probe", RE_PROBE),
+    ):
+        value = cfg.get(key)
+        if value:
+            validate_arg(str(value), pattern, key)
 
 
 def _flags_list(flags: list) -> str:
@@ -143,7 +187,7 @@ def build(profile_path: Path) -> None:
     subprocess.run(cmd, check=True, cwd=str(BENCH_DIR))
 
 
-def generate_profile_linux(cfg: dict, lib_name: str) -> Path:
+def generate_profile_linux(cfg: dict) -> Path:
     """Generate Conan profile for Cortex-A / Linux target."""
     cpu               = cfg.get("target_cpu", cfg.get("target_mcu", "cortex-a7"))
     float_abi         = cfg.get("float_abi", "hard")
@@ -194,6 +238,7 @@ def generate_profile_linux(cfg: dict, lib_name: str) -> Path:
 
 def deploy_linux(cfg: dict) -> None:
     """Deploy and run benchmark ELF on A-core Linux target via ADB or SSH."""
+    _sanitize_cfg(cfg)
     elf_path    = BENCH_DIR / "build" / "Release" / "benchmark"
     deploy_tool = cfg.get("deploy_tool", cfg.get("flash_tool", "adb"))
     remote_path = cfg.get("remote_path", "/data/local/tmp/benchmark")
@@ -226,6 +271,7 @@ def deploy_linux(cfg: dict) -> None:
 
 
 def flash(cfg: dict) -> None:
+    _sanitize_cfg(cfg)
     bin_path   = BENCH_DIR / "build" / "Release" / "benchmark.bin"
     flash_tool = cfg.get("flash_tool", "jlink")
     flash_addr = cfg.get("algo_flash_origin", "0x08030000")
@@ -298,7 +344,7 @@ def main():
     target_os    = cfg.get("target_os", "baremetal")
     is_linux     = target_os == "Linux"
 
-    profile_path = (generate_profile_linux(cfg, lib_name)
+    profile_path = (generate_profile_linux(cfg)
                     if is_linux
                     else generate_profile(cfg, lib_name))
     build(profile_path)

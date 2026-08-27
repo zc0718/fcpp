@@ -1,10 +1,30 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import re
+import shutil
 import subprocess
 import sys
-import shutil
 import tempfile
+
+# 白名单正则：所有进入 OS 命令的 CLI/配置值必须先通过校验。
+# （argv 列表无 shell + 白名单校验，防命令注入；同时覆盖 LLM 生成参数的沙箱逃逸场景。）
+RE_LOCAL_PATH  = re.compile(r"^[A-Za-z0-9_./\\:-]+$")
+RE_REMOTE_PATH = re.compile(r"^/[A-Za-z0-9._/-]+$")
+RE_SSH_HOST    = re.compile(r"^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+$")
+RE_HEX_ADDR    = re.compile(r"^0x[0-9A-Fa-f]{1,16}$")
+RE_CFG_PATH    = re.compile(r"^[A-Za-z0-9_./-]+$")
+RE_PROBE       = re.compile(r"^[A-Za-z0-9:._-]{1,64}$")
+RE_DEVICE      = re.compile(r"^[A-Za-z0-9]{1,32}$")
+RE_SPEED       = re.compile(r"^[0-9]{1,6}$")
+
+
+def validate_arg(value, pattern, label):
+    """校验值符合白名单，否则拒绝执行。"""
+    if value is None or not pattern.fullmatch(value):
+        print(f"[ERROR] 非法参数 {label}: {value!r}（白名单校验失败，已拒绝执行）")
+        sys.exit(2)
+    return value
 
 
 def run(cmd):
@@ -17,10 +37,166 @@ def require_tool(tool_name):
         print(f"未找到命令: {tool_name}，请先安装后再试")
         sys.exit(1)
 
+
+def _validate_args(args):
+    """全部用户输入先过白名单，再进入任何 OS 命令。"""
+    validate_arg(args.binary, RE_LOCAL_PATH, "--binary")
+    validate_arg(args.remote, RE_REMOTE_PATH, "--remote")
+    if args.host:
+        validate_arg(args.host, RE_SSH_HOST, "--host")
+    if args.mode in ("openocd", "pyocd", "jlink"):
+        validate_arg(args.addr, RE_HEX_ADDR, "--addr")
+    if args.interface:
+        validate_arg(args.interface, RE_CFG_PATH, "--interface")
+    if args.target:
+        validate_arg(args.target, RE_CFG_PATH, "--target")
+    if args.probe:
+        validate_arg(args.probe, RE_PROBE, "--probe")
+    if args.device:
+        validate_arg(args.device, RE_DEVICE, "--device")
+    validate_arg(args.speed, RE_SPEED, "--speed")
+
+
+def _deploy_adb(args):
+    run(["adb", "devices"])
+    run(["adb", "push", args.binary, args.remote])
+    run(["adb", "shell", "chmod", "+x", args.remote])
+    if args.run:
+        run(["adb", "shell", args.remote])
+
+
+def _deploy_ssh(args):
+    if not args.host:
+        print("ssh 模式需要 --host，例如 root@192.168.77.2")
+        sys.exit(1)
+    run(["scp", args.binary, f"{args.host}:{args.remote}"])
+    run(["ssh", args.host, "chmod", "+x", args.remote])
+    if args.run:
+        run(["ssh", args.host, args.remote])
+
+
+def _flash_openocd(args):
+    if not args.target:
+        print("openocd 模式需要 --target，例如 target/stm32f4x.cfg")
+        sys.exit(1)
+    require_tool("openocd")
+
+    verify_part = "" if args.no_verify else " verify"
+    ext = os.path.splitext(args.binary)[1].lower()
+    if ext in (".bin", ".img"):
+        program_cmd = f"program {args.binary} {args.addr}{verify_part} reset exit"
+    else:
+        # ELF/HEX 由 openocd 根据文件元信息处理地址
+        program_cmd = f"program {args.binary}{verify_part} reset exit"
+
+    run([
+        "openocd",
+        "-f", args.interface,
+        "-f", args.target,
+        "-c", f"transport select {args.transport}",
+        "-c", "init",
+        "-c", "halt",
+        "-c", program_cmd,
+    ])
+
+
+def _flash_pyocd(args):
+    if not args.target:
+        print("pyocd 模式需要 --target，例如 stm32f407vg")
+        sys.exit(1)
+    require_tool("pyocd")
+
+    # J-Link CE + pyocd 在 non_interactive=true 时可能出现 open(serial) 失败。
+    cmd = [sys.executable, "-m", "pyocd", "flash", args.binary, "-t", args.target,
+           "-O", "jlink.non_interactive=false"]
+    if args.probe:
+        cmd.extend(["-u", args.probe])
+    ext = os.path.splitext(args.binary)[1].lower()
+    if ext in (".bin", ".img"):
+        cmd.extend(["-a", args.addr])
+    if args.no_verify:
+        cmd.append("--no-verify")
+    run(cmd)
+
+
+def _flash_jlink(args):
+    if not args.device:
+        print("jlink 模式需要 --device，例如 BAT32G157GK64FB")
+        sys.exit(1)
+
+    jlink_exe = shutil.which("JLinkExe")
+    if jlink_exe is None:
+        print("未找到命令: JLinkExe，请先安装 SEGGER J-Link 软件包")
+        sys.exit(1)
+
+    ext = os.path.splitext(args.binary)[1].lower()
+    jlink_binary_path = args.binary
+    temp_bin_path = None
+
+    # J-Link Commander does not recognize custom extensions like .img,
+    # even with an explicit address. Convert to a temporary .bin path.
+    if ext == ".img":
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f_bin:
+            temp_bin_path = f_bin.name
+        shutil.copyfile(args.binary, temp_bin_path)
+        jlink_binary_path = temp_bin_path
+
+    if ext in (".bin", ".img"):
+        load_cmd = f"loadfile {jlink_binary_path} {args.addr}"
+        verify_cmd = f"verifybin {jlink_binary_path} {args.addr}"
+    else:
+        # HEX/ELF/AXF 使用文件内地址信息。
+        # J-Link 的 loadfile 已包含下载后校验，无需额外 verify 命令。
+        load_cmd = f"loadfile {args.binary}"
+        verify_cmd = None
+
+    script_lines = [
+        "r",
+        "h",
+        load_cmd,
+    ]
+    if (not args.no_verify) and verify_cmd:
+        script_lines.append(verify_cmd)
+    script_lines.append("r")
+    if args.run:
+        script_lines.append("g")
+    script_lines.append("q")
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".jlink", delete=False) as f:
+        script_path = f.name
+        f.write("\n".join(script_lines) + "\n")
+
+    try:
+        cmd = [
+            jlink_exe,
+            "-device", args.device,
+            "-if", args.transport.upper(),
+            "-speed", str(args.speed),
+            "-CommanderScript", script_path,
+            "-ExitOnError", "1",
+        ]
+        if args.probe:
+            probe = args.probe
+            if probe.startswith("jlink:"):
+                probe = probe.split(":", 1)[1]
+            cmd.extend(["-SelectEmuBySN", probe])
+        run(cmd)
+    finally:
+        try:
+            os.remove(script_path)
+        except OSError:
+            pass
+        if temp_bin_path:
+            try:
+                os.remove(temp_bin_path)
+            except OSError:
+                pass
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--binary", required=True, help="本地二进制/ELF路径")
-    p.add_argument("--remote", default="/tmp/main", help="板端目标路径")
+    p.add_argument("--remote", required=True, help="板端目标绝对路径，如 /tmp/main")
     p.add_argument("--mode", choices=["adb", "ssh", "openocd", "pyocd", "jlink"], required=True)
     p.add_argument("--host", help="ssh 目标地址，如 root@192.168.77.2")
     p.add_argument("--run", action="store_true", help="传输后立即执行")
@@ -38,136 +214,19 @@ def main():
         print(f"二进制不存在: {args.binary}")
         sys.exit(1)
 
+    # 所有用户输入先过白名单（防注入/防 LLM 参数沙箱逃逸），再进入 OS 命令。
+    _validate_args(args)
+
     if args.mode == "adb":
-        run(["adb", "devices"])
-        run(["adb", "push", args.binary, args.remote])
-        run(["adb", "shell", "chmod", "+x", args.remote])
-        if args.run:
-            run(["adb", "shell", args.remote])
-
+        _deploy_adb(args)
     elif args.mode == "ssh":
-        if not args.host:
-            print("ssh 模式需要 --host，例如 root@192.168.77.2")
-            sys.exit(1)
-        run(["scp", args.binary, f"{args.host}:{args.remote}"])
-        run(["ssh", args.host, "chmod", "+x", args.remote])
-        if args.run:
-            run(["ssh", args.host, args.remote])
-
+        _deploy_ssh(args)
     elif args.mode == "openocd":
-        if not args.target:
-            print("openocd 模式需要 --target，例如 target/stm32f4x.cfg")
-            sys.exit(1)
-        require_tool("openocd")
-
-        verify_part = "" if args.no_verify else " verify"
-        ext = os.path.splitext(args.binary)[1].lower()
-        if ext in (".bin", ".img"):
-            program_cmd = f"program {args.binary} {args.addr}{verify_part} reset exit"
-        else:
-            # ELF/HEX 由 openocd 根据文件元信息处理地址
-            program_cmd = f"program {args.binary}{verify_part} reset exit"
-
-        run([
-            "openocd",
-            "-f", args.interface,
-            "-f", args.target,
-            "-c", f"transport select {args.transport}",
-            "-c", "init",
-            "-c", "halt",
-            "-c", program_cmd,
-        ])
-
+        _flash_openocd(args)
     elif args.mode == "pyocd":
-        if not args.target:
-            print("pyocd 模式需要 --target，例如 stm32f407vg")
-            sys.exit(1)
-        require_tool("pyocd")
-
-        # J-Link CE + pyocd 在 non_interactive=true 时可能出现 open(serial) 失败。
-        cmd = [sys.executable, "-m", "pyocd", "flash", args.binary, "-t", args.target,
-               "-O", "jlink.non_interactive=false"]
-        if args.probe:
-            cmd.extend(["-u", args.probe])
-        ext = os.path.splitext(args.binary)[1].lower()
-        if ext in (".bin", ".img"):
-            cmd.extend(["-a", args.addr])
-        if args.no_verify:
-            cmd.append("--no-verify")
-        run(cmd)
-
-    elif args.mode == "jlink":
-        if not args.device:
-            print("jlink 模式需要 --device，例如 BAT32G157GK64FB")
-            sys.exit(1)
-
-        jlink_exe = shutil.which("JLinkExe")
-        if jlink_exe is None:
-            print("未找到命令: JLinkExe，请先安装 SEGGER J-Link 软件包")
-            sys.exit(1)
-
-        ext = os.path.splitext(args.binary)[1].lower()
-        jlink_binary_path = args.binary
-        temp_bin_path = None
-
-        # J-Link Commander does not recognize custom extensions like .img,
-        # even with an explicit address. Convert to a temporary .bin path.
-        if ext == ".img":
-            with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f_bin:
-                temp_bin_path = f_bin.name
-            shutil.copyfile(args.binary, temp_bin_path)
-            jlink_binary_path = temp_bin_path
-
-        if ext in (".bin", ".img"):
-            load_cmd = f"loadfile {jlink_binary_path} {args.addr}"
-            verify_cmd = f"verifybin {jlink_binary_path} {args.addr}"
-        else:
-            # HEX/ELF/AXF 使用文件内地址信息。
-            # J-Link 的 loadfile 已包含下载后校验，无需额外 verify 命令。
-            load_cmd = f"loadfile {args.binary}"
-            verify_cmd = None
-
-        script_lines = [
-            "r",
-            "h",
-            load_cmd,
-        ]
-        if (not args.no_verify) and verify_cmd:
-            script_lines.append(verify_cmd)
-        script_lines.append("r")
-        if args.run:
-            script_lines.append("g")
-        script_lines.append("q")
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".jlink", delete=False) as f:
-            script_path = f.name
-            f.write("\n".join(script_lines) + "\n")
-
-        try:
-            cmd = [
-                jlink_exe,
-                "-device", args.device,
-                "-if", args.transport.upper(),
-                "-speed", str(args.speed),
-                "-CommanderScript", script_path,
-                "-ExitOnError", "1",
-            ]
-            if args.probe:
-                probe = args.probe
-                if probe.startswith("jlink:"):
-                    probe = probe.split(":", 1)[1]
-                cmd.extend(["-SelectEmuBySN", probe])
-            run(cmd)
-        finally:
-            try:
-                os.remove(script_path)
-            except OSError:
-                pass
-            if temp_bin_path:
-                try:
-                    os.remove(temp_bin_path)
-                except OSError:
-                    pass
+        _flash_pyocd(args)
+    else:
+        _flash_jlink(args)
 
 
 if __name__ == "__main__":

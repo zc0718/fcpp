@@ -85,7 +85,7 @@ jobs:
           node-version: 'lts/*'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --ignore-scripts
 
       - name: Lint push commits
         if: github.event_name == 'push'
@@ -122,7 +122,7 @@ jobs:
           node-version: 'lts/*'
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --ignore-scripts
 
       - name: Validate metadata.json
         run: ./node_modules/.bin/ajv validate -s .github/misc/metadata.schema.json -d metadata.json --spec=draft7
