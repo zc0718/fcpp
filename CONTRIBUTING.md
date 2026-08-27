@@ -33,6 +33,7 @@ npm ci --no-audit --no-fund
 pip install pre-commit && pre-commit install
 
 # 质量自查
+# 注：clang-format 需 >= 19（`Language: C` 多语言段），建议 `pip install clang-format==23.1.0`
 npx ajv validate -s metadata.schema.json -d metadata.json --spec=draft7
 find include src -type f \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) -exec clang-format --dry-run --Werror {} +
 clang-tidy src/*.cpp -- -std=c++17

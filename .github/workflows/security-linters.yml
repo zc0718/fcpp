@@ -39,7 +39,10 @@ jobs:
       - name: Install toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format clang-tidy libeigen3-dev zlib1g-dev libpcre2-dev
+          sudo apt-get install -y clang-tidy libeigen3-dev zlib1g-dev libpcre2-dev
+          # apt clang-format (v18 on noble) does NOT support the `Language: C`
+          # config section (needs LLVM >= 19) — pin the pip build instead.
+          python3 -m pip install clang-format==23.1.0
 
       # ETL is header-only and has no Ubuntu package; use the release archive
       # pinned to the same version as conandata.yml (etl/20.47.1).
