@@ -22,7 +22,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-# 复用 download.py 的白名单校验（同一目录，运行时 sys.path 自动包含脚本目录）。
+# Reuse the whitelist validation from download.py (same directory; sys.path
+# includes the script directory at runtime).
 from download import (
     _check,
     RE_HEX_ADDR,
@@ -209,7 +210,7 @@ def deploy_linux(cfg: dict) -> None:
     elf_path    = BENCH_DIR / "build" / "Release" / "benchmark"
     deploy_tool = cfg.get("deploy_tool", cfg.get("flash_tool", "adb"))
     if deploy_tool not in ("adb", "ssh"):
-        raise ValueError(f"非法 deploy_tool: {deploy_tool!r}")
+        raise ValueError(f"invalid deploy_tool: {deploy_tool!r}")
     remote_path = _check(cfg.get("remote_path", "/data/local/tmp/benchmark"), RE_REMOTE_PATH, "remote_path")
 
     if not elf_path.exists():
@@ -232,7 +233,8 @@ def deploy_linux(cfg: dict) -> None:
             return
         cmd += ["--host", _check(ssh_host, RE_SSH_HOST, "ssh_host")]
 
-    # 豁免理由见 wokspace/SONAR-IMPROVEMENT-PLAN.md §7：全部配置值已逐一过白名单校验，argv 列表无 shell。
+    # Suppression rationale: see wokspace/SONAR-IMPROVEMENT-PLAN.md section 7;
+    # every value has passed whitelist validation and argv is used without shell.
     print(f">> {' '.join(cmd)}")
     subprocess.run(cmd, check=True)  # NOSONAR
 
@@ -241,7 +243,7 @@ def flash(cfg: dict) -> None:
     bin_path   = BENCH_DIR / "build" / "Release" / "benchmark.bin"
     flash_tool = cfg.get("flash_tool", "jlink")
     if flash_tool not in ("jlink", "openocd", "pyocd"):
-        raise ValueError(f"非法 flash_tool: {flash_tool!r}")
+        raise ValueError(f"invalid flash_tool: {flash_tool!r}")
     flash_addr = _check(cfg.get("algo_flash_origin", "0x08030000"), RE_HEX_ADDR, "algo_flash_origin")
 
     if not bin_path.exists():
@@ -282,7 +284,8 @@ def flash(cfg: dict) -> None:
         if cfg.get("pyocd_probe"):
             cmd += ["--probe", _check(cfg["pyocd_probe"], RE_PROBE, "pyocd_probe")]
 
-    # 豁免理由见 wokspace/SONAR-IMPROVEMENT-PLAN.md §7：全部配置值已逐一过白名单校验，argv 列表无 shell。
+    # Suppression rationale: see wokspace/SONAR-IMPROVEMENT-PLAN.md section 7;
+    # every value has passed whitelist validation and argv is used without shell.
     print(f">> {' '.join(cmd)}")
     subprocess.run(cmd, check=True)  # NOSONAR
 

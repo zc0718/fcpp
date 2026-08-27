@@ -7,8 +7,9 @@ import subprocess
 import sys
 import tempfile
 
-# 白名单正则：所有进入 OS 命令的 CLI/配置值必须先通过校验。
-# （argv 列表无 shell + re.fullmatch 白名单校验，防命令注入；同时覆盖 LLM 生成参数的沙箱逃逸场景。）
+# Whitelist patterns: every CLI/config value that reaches an OS command must
+# pass validation first. (argv list without shell + re.fullmatch whitelist =
+# no command injection; also covers LLM-generated args escaping a sandbox.)
 RE_LOCAL_PATH = r"^[A-Za-z0-9_./\\:-]+$"
 RE_REMOTE_PATH = r"^/[A-Za-z0-9._/-]+$"
 RE_SSH_HOST = r"^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+$"
@@ -20,9 +21,9 @@ RE_SPEED = r"^\d{1,6}$"
 
 
 def _check(value, pattern, label):
-    """白名单校验：不匹配抛 ValueError（main 统一转为 exit 2）。"""
+    """Whitelist validation: raise ValueError on mismatch (main maps it to exit 2)."""
     if not re.fullmatch(pattern, value):
-        raise ValueError(f"非法参数 {label}: {value!r}")
+        raise ValueError(f"Invalid argument {label}: {value!r}")
     return value
 
 
@@ -113,7 +114,10 @@ def _flash_pyocd(args):
 
 
 def _jlink_script(args, binary, addr):
-    """生成 J-Link Commander 脚本；.img 先转临时 .bin。返回 (script_lines, temp_bin_path)。"""
+    """Build the J-Link Commander script; .img is converted to a temp .bin first.
+
+    Returns (script_lines, temp_bin_path).
+    """
     ext = os.path.splitext(binary)[1].lower()
     jlink_binary_path = binary
     temp_bin_path = None
@@ -146,7 +150,7 @@ def _jlink_script(args, binary, addr):
 
 
 def _run_jlink_exe(args, jlink_exe, device, speed, probe, script_lines, temp_bin_path):
-    """写入脚本并执行 JLinkExe，结束后清理临时文件。"""
+    """Write the script and run JLinkExe, then clean up temporary files."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".jlink", delete=False) as f:
         script_path = f.name
         f.write("\n".join(script_lines) + "\n")
@@ -217,7 +221,8 @@ def main():
         print(f"二进制不存在: {args.binary}")
         sys.exit(1)
 
-    # 各模式函数内部会先做白名单校验再执行 OS 命令（无 shell）。
+    # Each mode function validates its arguments against the whitelist before
+    # running any OS command (no shell).
     try:
         if args.mode == "adb":
             _deploy_adb(args)

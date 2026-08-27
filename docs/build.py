@@ -41,13 +41,16 @@ _hit_file_start = re.compile(r"\n?/\*!")
 _hit_since_start = re.compile(r"\n?/\*\*")
 language_map = {'en': 'English', 'zh': 'Chinese', 'jp': 'Japanese'}
 
-# 多处分发使用的固定文件名/注解（避免字面量漂移）
+# Fixed filenames / annotations used in several places (extracted to avoid drift).
 DOXYFILE_IN = 'Doxyfile.in'
 SINCE_TAG = '@since '
 
 
 def _match_file_doc(block: str):
-    """线性匹配：锚定 `/*!` 起始并用 str.find 定位 @file/@defgroup，避免回溯型正则。"""
+    """Linear match: anchor the `/*!` start and locate @file/@defgroup via
+
+    str.find to avoid backtracking-heavy regexes.
+    """
     m = _hit_file_start.match(block)
     if m is None or '@file' not in block or '@defgroup' not in block:
         return None
@@ -55,7 +58,10 @@ def _match_file_doc(block: str):
 
 
 def _match_since_command(block: str):
-    """线性匹配：锚定 `/**` 起始并用 str.find 定位 SINCE_TAG，避免回溯型正则。"""
+    """Linear match: anchor the `/**` start and locate SINCE_TAG via str.find
+
+    to avoid backtracking-heavy regexes.
+    """
     m = _hit_since_start.match(block)
     if m is None or SINCE_TAG not in block:
         return None

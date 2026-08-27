@@ -25,7 +25,7 @@ conan_targets = {
     'Catch2::Catch2': 'catch2::catch2'
 }
 
-# 模块注解/守卫字面量（多处使用，统一提取避免漂移）
+# Module annotation / include-guard literals (extracted to avoid drift).
 METADATA_FILENAME = 'metadata.json'
 TAG_EXPORTER = '@exporter'
 TAG_ATTACHER = '@attacher'
@@ -47,8 +47,8 @@ _metadata = _inherit_root_metadata()
 
 
 def _get_export_objects(x: list[str], tag: Literal['@exporter', '@attacher'] = TAG_EXPORTER) -> list[str]:
-    # 注：按 '\n\n'（两空行）切分，符合仓库全局对象间 2 空行约定；
-    # 若模块命名空间场景需 '\n\n\n' 切分，另行评估。
+    # Note: split on '\n\n' (two blank lines) per the repo convention between
+    # global objects; revisit '\n\n\n' if module namespaces ever need it.
     _cache = (''.join(x)).split('\n\n')
     _export_objs = [_ for _ in _cache if tag in _]
 

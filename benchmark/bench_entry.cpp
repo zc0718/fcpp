@@ -38,7 +38,8 @@ struct BenchState {
 
 BenchState &bench_state(void)
 {
-	// 函数级 static：替代文件级可变全局，避免跨翻译单元状态污染。
+	// Function-local static: replaces file-scope mutable globals to avoid
+	// cross-translation-unit state pollution.
 	static BenchState state = {};
 	return state;
 }
@@ -53,7 +54,7 @@ static void bench_prepare_input(void)
 	}
 }
 
-static int bench_add_case(const void * const ctx) // NOSONAR: ctx 为 pFunCase ABI 的 opaque 上下文，跨语言二进制兼容所需。
+static int bench_add_case(const void * const ctx) // NOSONAR: opaque ctx required by the pFunCase C ABI for cross-language binary compatibility.
 {
 	(void)ctx;
 	fcpp_vec_add_f32(bench_state().a.data(), bench_state().b.data(),
@@ -61,7 +62,7 @@ static int bench_add_case(const void * const ctx) // NOSONAR: ctx 为 pFunCase A
 	return bench_state().y[0] == (bench_state().a[0] + bench_state().b[0]);
 }
 
-static int bench_sub_case(const void * const ctx) // NOSONAR: ctx 为 pFunCase ABI 的 opaque 上下文，跨语言二进制兼容所需。
+static int bench_sub_case(const void * const ctx) // NOSONAR: opaque ctx required by the pFunCase C ABI for cross-language binary compatibility.
 {
 	(void)ctx;
 	fcpp_vec_sub_f32(bench_state().a.data(), bench_state().b.data(),
@@ -69,7 +70,7 @@ static int bench_sub_case(const void * const ctx) // NOSONAR: ctx 为 pFunCase A
 	return bench_state().y[0] == (bench_state().a[0] - bench_state().b[0]);
 }
 
-static const Case bench_table[] = { // NOSONAR: 必须保持 C 数组 —— BENCHMARK_IMPLEMENTATION 宏以 C 兼容聚合方式消费。
+static const Case bench_table[] = { // NOSONAR: must stay a C array - BENCHMARK_IMPLEMENTATION consumes it as a C-compatible aggregate.
 	BENCHMARK_CASE_IMPLEMENTATION("test_add_n128", nullptr, bench_add_case, 100U),
 	BENCHMARK_CASE_IMPLEMENTATION("test_sub_n128", nullptr, bench_sub_case, 100U),
 };
