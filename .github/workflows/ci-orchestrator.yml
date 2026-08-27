@@ -20,8 +20,9 @@ concurrency:
   group: orchestrator-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Permissions are declared per job (read for commit-lint/schema-check; the
-# release reusable workflow carries its own write permissions).
+# Permissions are declared per job (least privilege). Jobs that call a reusable
+# workflow via `secrets: inherit` must grant the scopes that reusable workflow
+# needs, or GitHub rejects the run at load time (startup_failure).
 
 jobs:
   # Step 1: Call the metadata controller to analyze metadata.json
@@ -149,6 +150,12 @@ jobs:
     name: Release
     needs: controller
     if: needs.controller.outputs.trigger_release == 'true'
+    # semver-release.yml (called with secrets: inherit) needs write scopes to
+    # create tags/releases, so grant them on this job, not at workflow top level.
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     uses: ./.github/workflows/semver-release.yml
     secrets: inherit
 
@@ -162,6 +169,9 @@ jobs:
     name: Security Scan
     needs: controller
     if: needs.controller.outputs.trigger_security == 'true'
+    # security-linters.yml (called with secrets: inherit) only reads the repo.
+    permissions:
+      contents: read
     uses: ./.github/workflows/security-linters.yml
     with:
       validate_all_codebase: ${{ github.event_name == 'push' && 'true' || 'false' }}
