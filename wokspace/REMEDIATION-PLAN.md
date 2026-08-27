@@ -136,6 +136,10 @@
 
 **F8（工具链版本矩阵）**: ① Ubuntu noble 无 `libetl-dev` → ETL 用 release 源码包 20.47.1（与 conandata 对齐）；② apt clang-format 18 不支持 `Language: C` 多语言段（LLVM≥19 特性）→ CI 与 devcontainer 统一 `pip install clang-format==23.1.0`，CONTRIBUTING 声明最低版本。
 
+**F9（与私有语法交叉验证捕获）**: clang-format 内置扩展映射把 `.h` 当 C++，与私有约定"`.h/.c` 走 C"（`conanfile.py` syntax guide #9、`code-conventions.md` 后缀分工）冲突。处置：**双配置按语言族分流**——`.github/misc/.clang-format-c`（`.c/.h`，Right 指针对齐）+ `.github/misc/.clang-format-cpp`（`.hpp/.cpp`，Left），门禁/pre-commit/mega-linter 显式 `--style=file:` 路由；编辑器经 `.vscode/settings.json` 指向 C++ 配置（clangd 无按扩展分流能力，已文档化，CI 门禁为准）。
+
+**分层重构（用户要求）**: CI 调用的工具配置统一迁入 `.github/misc/`（clang-format 双配置、clang-tidy、gitleaks、mega-linter、releaserc、commitlint、schema、pre-commit）；治理文件迁入 `.github/`（CODEOWNERS、CONTRIBUTING）；根目录仅保留框架强制文件（npm/conan/cmake/Doxyfile/editorconfig/gitignore/.vscode/.devcontainer）。交叉验证证据：模块生成 `_get_export_objects` 在格式化后仍能提取 exporter/attacher（cpptest.hpp 4 段、cpptest.cpp 3+2 段、ctest.c 3 段）；`conanfile.py` 按 `split('\n\n')` 切分（2~3 空行均兼容）；`docs/build.py` 硬引用根目录 `Doxyfile`/`metadata.json`（必须留根）。
+
 ## 9. CI 观察方式（本环境 gh 未登录）
 
 - 匿名 API：`curl -s https://api.github.com/repos/zc0718/fcpp/actions/runs?per_page=5`（公开仓库可读）
