@@ -1,6 +1,6 @@
 # fcpp C/C++ Code Conventions（模板私有代码规范）
 
-> Fact source: module generation in `conanfile.py`, `.github/misc/.clang-format-c`, `.github/misc/.clang-format-cpp`, `.github/misc/.clang-tidy`, `Codegen-Starter.txt`. CI 调用的工具配置统一放 `.github/misc/`；根目录仅保留框架自动发现必需的文件（见 `.github/CONTRIBUTING.md` 布局节）。
+> Fact source: module generation in `conanfile.py`, `.github/misc/.clang-format-c`, `.github/misc/.clang-format-cpp`, `.github/misc/.clang-tidy`, `.github/misc/Codegen-Starter.txt`. CI 调用的工具配置统一放 `.github/misc/`；根目录仅保留框架自动发现必需的文件（见 `.github/CONTRIBUTING.md` 布局节）。
 
 ## File Organization（文件组织）
 
