@@ -8,20 +8,22 @@ import sys
 import tempfile
 
 # 白名单正则：所有进入 OS 命令的 CLI/配置值必须先通过校验。
-# （argv 列表无 shell + 白名单校验，防命令注入；同时覆盖 LLM 生成参数的沙箱逃逸场景。）
-RE_LOCAL_PATH  = re.compile(r"^[A-Za-z0-9_./\\:-]+$")
-RE_REMOTE_PATH = re.compile(r"^/[A-Za-z0-9._/-]+$")
-RE_SSH_HOST    = re.compile(r"^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+$")
-RE_HEX_ADDR    = re.compile(r"^0x[0-9A-Fa-f]{1,16}$")
-RE_CFG_PATH    = re.compile(r"^[A-Za-z0-9_./-]+$")
-RE_PROBE       = re.compile(r"^[A-Za-z0-9:._-]{1,64}$")
-RE_DEVICE      = re.compile(r"^[A-Za-z0-9]{1,32}$")
-RE_SPEED       = re.compile(r"^\d{1,6}$")
+# （argv 列表无 shell + re.fullmatch 白名单校验，防命令注入；同时覆盖 LLM 生成参数的沙箱逃逸场景。）
+RE_LOCAL_PATH = r"^[A-Za-z0-9_./\\:-]+$"
+RE_REMOTE_PATH = r"^/[A-Za-z0-9._/-]+$"
+RE_SSH_HOST = r"^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+$"
+RE_HEX_ADDR = r"^0x[0-9A-Fa-f]{1,16}$"
+RE_CFG_PATH = r"^[A-Za-z0-9_./-]+$"
+RE_PROBE = r"^[A-Za-z0-9:._-]{1,64}$"
+RE_DEVICE = r"^[A-Za-z0-9]{1,32}$"
+RE_SPEED = r"^\d{1,6}$"
 
 
-def _reject(label, value):
-    print(f"[ERROR] 非法参数 {label}: {value!r}（白名单校验失败，已拒绝执行）")
-    sys.exit(2)
+def _check(value, pattern, label):
+    """白名单校验：不匹配抛 ValueError（main 统一转为 exit 2）。"""
+    if not re.fullmatch(pattern, value):
+        raise ValueError(f"非法参数 {label}: {value!r}")
+    return value
 
 
 def run(cmd):
@@ -36,11 +38,8 @@ def require_tool(tool_name):
 
 
 def _deploy_adb(args):
-    binary, remote = args.binary, args.remote
-    if not RE_LOCAL_PATH.fullmatch(binary):
-        _reject("--binary", binary)
-    if not RE_REMOTE_PATH.fullmatch(remote):
-        _reject("--remote", remote)
+    binary = _check(args.binary, RE_LOCAL_PATH, "--binary")
+    remote = _check(args.remote, RE_REMOTE_PATH, "--remote")
     run(["adb", "devices"])
     run(["adb", "push", binary, remote])
     run(["adb", "shell", "chmod", "+x", remote])
@@ -52,13 +51,9 @@ def _deploy_ssh(args):
     if not args.host:
         print("ssh 模式需要 --host，例如 root@192.168.77.2")
         sys.exit(1)
-    binary, host, remote = args.binary, args.host, args.remote
-    if not RE_LOCAL_PATH.fullmatch(binary):
-        _reject("--binary", binary)
-    if not RE_SSH_HOST.fullmatch(host):
-        _reject("--host", host)
-    if not RE_REMOTE_PATH.fullmatch(remote):
-        _reject("--remote", remote)
+    binary = _check(args.binary, RE_LOCAL_PATH, "--binary")
+    host = _check(args.host, RE_SSH_HOST, "--host")
+    remote = _check(args.remote, RE_REMOTE_PATH, "--remote")
     run(["scp", binary, f"{host}:{remote}"])
     run(["ssh", host, "chmod", "+x", remote])
     if args.run:
@@ -71,15 +66,10 @@ def _flash_openocd(args):
         sys.exit(1)
     require_tool("openocd")
 
-    binary, addr, interface, target = args.binary, args.addr, args.interface, args.target
-    if not RE_LOCAL_PATH.fullmatch(binary):
-        _reject("--binary", binary)
-    if not RE_HEX_ADDR.fullmatch(addr):
-        _reject("--addr", addr)
-    if not RE_CFG_PATH.fullmatch(interface):
-        _reject("--interface", interface)
-    if not RE_CFG_PATH.fullmatch(target):
-        _reject("--target", target)
+    binary = _check(args.binary, RE_LOCAL_PATH, "--binary")
+    addr = _check(args.addr, RE_HEX_ADDR, "--addr")
+    interface = _check(args.interface, RE_CFG_PATH, "--interface")
+    target = _check(args.target, RE_CFG_PATH, "--target")
 
     verify_part = "" if args.no_verify else " verify"
     ext = os.path.splitext(binary)[1].lower()
@@ -106,25 +96,17 @@ def _flash_pyocd(args):
         sys.exit(1)
     require_tool("pyocd")
 
-    binary, target = args.binary, args.target
-    if not RE_LOCAL_PATH.fullmatch(binary):
-        _reject("--binary", binary)
-    if not RE_CFG_PATH.fullmatch(target):
-        _reject("--target", target)
+    binary = _check(args.binary, RE_LOCAL_PATH, "--binary")
+    target = _check(args.target, RE_CFG_PATH, "--target")
 
     # J-Link CE + pyocd 在 non_interactive=true 时可能出现 open(serial) 失败。
     cmd = [sys.executable, "-m", "pyocd", "flash", binary, "-t", target,
            "-O", "jlink.non_interactive=false"]
     if args.probe:
-        probe = args.probe
-        if not RE_PROBE.fullmatch(probe):
-            _reject("--probe", probe)
-        cmd.extend(["-u", probe])
+        cmd.extend(["-u", _check(args.probe, RE_PROBE, "--probe")])
     ext = os.path.splitext(binary)[1].lower()
     if ext in (".bin", ".img"):
-        if not RE_HEX_ADDR.fullmatch(args.addr):
-            _reject("--addr", args.addr)
-        cmd.extend(["-a", args.addr])
+        cmd.extend(["-a", _check(args.addr, RE_HEX_ADDR, "--addr")])
     if args.no_verify:
         cmd.append("--no-verify")
     run(cmd)
@@ -140,14 +122,11 @@ def _flash_jlink(args):
         print("未找到命令: JLinkExe，请先安装 SEGGER J-Link 软件包")
         sys.exit(1)
 
-    binary, device = args.binary, args.device
-    if not RE_LOCAL_PATH.fullmatch(binary):
-        _reject("--binary", binary)
-    if not RE_DEVICE.fullmatch(device):
-        _reject("--device", device)
-    speed = str(args.speed)
-    if not RE_SPEED.fullmatch(speed):
-        _reject("--speed", speed)
+    binary = _check(args.binary, RE_LOCAL_PATH, "--binary")
+    device = _check(args.device, RE_DEVICE, "--device")
+    speed = _check(str(args.speed), RE_SPEED, "--speed")
+    addr = _check(args.addr, RE_HEX_ADDR, "--addr")
+    probe = _check(args.probe, RE_PROBE, "--probe") if args.probe else None
 
     ext = os.path.splitext(binary)[1].lower()
     jlink_binary_path = binary
@@ -162,21 +141,15 @@ def _flash_jlink(args):
         jlink_binary_path = temp_bin_path
 
     if ext in (".bin", ".img"):
-        if not RE_HEX_ADDR.fullmatch(args.addr):
-            _reject("--addr", args.addr)
-        load_cmd = f"loadfile {jlink_binary_path} {args.addr}"
-        verify_cmd = f"verifybin {jlink_binary_path} {args.addr}"
+        load_cmd = f"loadfile {jlink_binary_path} {addr}"
+        verify_cmd = f"verifybin {jlink_binary_path} {addr}"
     else:
         # HEX/ELF/AXF 使用文件内地址信息。
         # J-Link 的 loadfile 已包含下载后校验，无需额外 verify 命令。
         load_cmd = f"loadfile {binary}"
         verify_cmd = None
 
-    script_lines = [
-        "r",
-        "h",
-        load_cmd,
-    ]
+    script_lines = ["r", "h", load_cmd]
     if (not args.no_verify) and verify_cmd:
         script_lines.append(verify_cmd)
     script_lines.append("r")
@@ -197,12 +170,8 @@ def _flash_jlink(args):
             "-CommanderScript", script_path,
             "-ExitOnError", "1",
         ]
-        if args.probe:
-            probe = args.probe
-            if not RE_PROBE.fullmatch(probe):
-                _reject("--probe", probe)
-            if probe.startswith("jlink:"):
-                probe = probe.split(":", 1)[1]
+        if probe:
+            probe = probe.split(":", 1)[1] if probe.startswith("jlink:") else probe
             cmd.extend(["-SelectEmuBySN", probe])
         run(cmd)
     finally:
@@ -239,16 +208,20 @@ def main():
         sys.exit(1)
 
     # 各模式函数内部会先做白名单校验再执行 OS 命令（无 shell）。
-    if args.mode == "adb":
-        _deploy_adb(args)
-    elif args.mode == "ssh":
-        _deploy_ssh(args)
-    elif args.mode == "openocd":
-        _flash_openocd(args)
-    elif args.mode == "pyocd":
-        _flash_pyocd(args)
-    else:
-        _flash_jlink(args)
+    try:
+        if args.mode == "adb":
+            _deploy_adb(args)
+        elif args.mode == "ssh":
+            _deploy_ssh(args)
+        elif args.mode == "openocd":
+            _flash_openocd(args)
+        elif args.mode == "pyocd":
+            _flash_pyocd(args)
+        else:
+            _flash_jlink(args)
+    except ValueError as err:
+        print(f"[ERROR] {err}")
+        sys.exit(2)
 
 
 if __name__ == "__main__":

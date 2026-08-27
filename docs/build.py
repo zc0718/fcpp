@@ -37,13 +37,21 @@ def _inherit_root_metadata():
 _hit_com_tag = re.compile(r" \* @")
 _hit_lang_tag = re.compile(rf"( \* @[a-z]+).*\[({'|'.join(_inherit_root_metadata().get('doc_languages'))})] ")
 _hit_free_tag = re.compile(r" \* [^@]+")
-_hit_file_doc = re.compile(r"\n?/\*![\s\S]*?@file[\s\S]*?@defgroup")
+_hit_file_start = re.compile(r"\n?/\*!")
 _hit_since_start = re.compile(r"\n?/\*\*")
 language_map = {'en': 'English', 'zh': 'Chinese', 'jp': 'Japanese'}
 
 # 多处分发使用的固定文件名/注解（避免字面量漂移）
 DOXYFILE_IN = 'Doxyfile.in'
 SINCE_TAG = '@since '
+
+
+def _match_file_doc(block: str):
+    """线性匹配：锚定 `/*!` 起始并用 str.find 定位 @file/@defgroup，避免回溯型正则。"""
+    m = _hit_file_start.match(block)
+    if m is None or '@file' not in block or '@defgroup' not in block:
+        return None
+    return m
 
 
 def _match_since_command(block: str):
@@ -152,7 +160,7 @@ def _ver_filter(x: list[str], ver: str) -> tuple[list[str], str]:
     x = (''.join(x)).split('\n\n\n')
     container, _need_append_end, file_ver = [], False, ''
     for i, block in enumerate(x):  # x[0] for import declaration
-        if _hit_file_doc.match(block):
+        if _match_file_doc(block):
             if SINCE_TAG in block:
                 file_ver = block.split(SINCE_TAG)[1].split(' ')[0].strip()
             container.append(block+'\n//! @{')

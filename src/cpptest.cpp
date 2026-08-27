@@ -59,8 +59,8 @@ void test_cpp_zlib() {
     const char in[] = "Hello, zlib in CPP!";
     std::array<unsigned char, 128> out{};
     std::array<unsigned char, 128> rec{};
-    uLong len_out = static_cast<uLong>(out.size());
-    uLong len_rec = static_cast<uLong>(rec.size());
+    auto len_out = static_cast<uLong>(out.size());
+    auto len_rec = static_cast<uLong>(rec.size());
     if (auto compress_result =
             compress(out.data(), &len_out, reinterpret_cast<const Bytef*>(in), static_cast<uLong>(sizeof(in)));
         compress_result != Z_OK) {

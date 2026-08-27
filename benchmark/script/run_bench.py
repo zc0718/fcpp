@@ -22,8 +22,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-# 复用 download.py 的白名单正则（同一目录，运行时 sys.path 自动包含脚本目录）。
+# 复用 download.py 的白名单校验（同一目录，运行时 sys.path 自动包含脚本目录）。
 from download import (
+    _check,
     RE_HEX_ADDR,
     RE_REMOTE_PATH,
     RE_SSH_HOST,
@@ -208,12 +209,8 @@ def deploy_linux(cfg: dict) -> None:
     elf_path    = BENCH_DIR / "build" / "Release" / "benchmark"
     deploy_tool = cfg.get("deploy_tool", cfg.get("flash_tool", "adb"))
     if deploy_tool not in ("adb", "ssh"):
-        print(f"[ERROR] 非法 deploy_tool: {deploy_tool!r}")
-        sys.exit(2)
-    remote_path = cfg.get("remote_path", "/data/local/tmp/benchmark")
-    if not RE_REMOTE_PATH.fullmatch(remote_path):
-        print(f"[ERROR] 非法 remote_path: {remote_path!r}")
-        sys.exit(2)
+        raise ValueError(f"非法 deploy_tool: {deploy_tool!r}")
+    remote_path = _check(cfg.get("remote_path", "/data/local/tmp/benchmark"), RE_REMOTE_PATH, "remote_path")
 
     if not elf_path.exists():
         print(f"[ERROR] Binary not found: {elf_path}")
@@ -233,10 +230,7 @@ def deploy_linux(cfg: dict) -> None:
         if not ssh_host:
             print("[WARN] ssh_host not configured in bench_config — skipping deploy.")
             return
-        if not RE_SSH_HOST.fullmatch(ssh_host):
-            print(f"[ERROR] 非法 ssh_host: {ssh_host!r}")
-            sys.exit(2)
-        cmd += ["--host", ssh_host]
+        cmd += ["--host", _check(ssh_host, RE_SSH_HOST, "ssh_host")]
 
     print(f">> {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
@@ -246,12 +240,8 @@ def flash(cfg: dict) -> None:
     bin_path   = BENCH_DIR / "build" / "Release" / "benchmark.bin"
     flash_tool = cfg.get("flash_tool", "jlink")
     if flash_tool not in ("jlink", "openocd", "pyocd"):
-        print(f"[ERROR] 非法 flash_tool: {flash_tool!r}")
-        sys.exit(2)
-    flash_addr = cfg.get("algo_flash_origin", "0x08030000")
-    if not RE_HEX_ADDR.fullmatch(flash_addr):
-        print(f"[ERROR] 非法 algo_flash_origin: {flash_addr!r}")
-        sys.exit(2)
+        raise ValueError(f"非法 flash_tool: {flash_tool!r}")
+    flash_addr = _check(cfg.get("algo_flash_origin", "0x08030000"), RE_HEX_ADDR, "algo_flash_origin")
 
     if not bin_path.exists():
         print(f"[ERROR] Binary not found: {bin_path}")
@@ -270,46 +260,26 @@ def flash(cfg: dict) -> None:
         if not device or device == "CHANGE_ME":
             print("[WARN] jlink_device is not configured in bench_config.json — skipping flash.")
             return
-        if not RE_DEVICE.fullmatch(device):
-            print(f"[ERROR] 非法 jlink_device: {device!r}")
-            sys.exit(2)
-        speed = str(cfg.get("jlink_speed", "4000"))
-        if not RE_SPEED.fullmatch(speed):
-            print(f"[ERROR] 非法 jlink_speed: {speed!r}")
-            sys.exit(2)
-        cmd += ["--device", device]
-        cmd += ["--speed", speed]
+        cmd += ["--device", _check(device, RE_DEVICE, "jlink_device")]
+        cmd += ["--speed", _check(str(cfg.get("jlink_speed", "4000")), RE_SPEED, "jlink_speed")]
 
     elif flash_tool == "openocd":
         target_cfg = cfg.get("openocd_target", "")
         if not target_cfg:
             print("[WARN] openocd_target not configured — skipping flash.")
             return
-        if not RE_CFG_PATH.fullmatch(target_cfg):
-            print(f"[ERROR] 非法 openocd_target: {target_cfg!r}")
-            sys.exit(2)
-        interface = cfg.get("openocd_interface", "interface/stlink.cfg")
-        if not RE_CFG_PATH.fullmatch(interface):
-            print(f"[ERROR] 非法 openocd_interface: {interface!r}")
-            sys.exit(2)
+        interface = _check(cfg.get("openocd_interface", "interface/stlink.cfg"), RE_CFG_PATH, "openocd_interface")
         cmd += ["--interface", interface]
-        cmd += ["--target", target_cfg]
+        cmd += ["--target", _check(target_cfg, RE_CFG_PATH, "openocd_target")]
 
     elif flash_tool == "pyocd":
         target = cfg.get("pyocd_target", "")
         if not target:
             print("[WARN] pyocd_target not configured — skipping flash.")
             return
-        if not RE_CFG_PATH.fullmatch(target):
-            print(f"[ERROR] 非法 pyocd_target: {target!r}")
-            sys.exit(2)
-        cmd += ["--target", target]
+        cmd += ["--target", _check(target, RE_CFG_PATH, "pyocd_target")]
         if cfg.get("pyocd_probe"):
-            probe = cfg["pyocd_probe"]
-            if not RE_PROBE.fullmatch(probe):
-                print(f"[ERROR] 非法 pyocd_probe: {probe!r}")
-                sys.exit(2)
-            cmd += ["--probe", probe]
+            cmd += ["--probe", _check(cfg["pyocd_probe"], RE_PROBE, "pyocd_probe")]
 
     print(f">> {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
@@ -348,10 +318,14 @@ def main():
     build(profile_path)
 
     if not args.no_flash:
-        if is_linux:
-            deploy_linux(cfg)
-        else:
-            flash(cfg)
+        try:
+            if is_linux:
+                deploy_linux(cfg)
+            else:
+                flash(cfg)
+        except ValueError as err:
+            print(f"[ERROR] {err}")
+            sys.exit(2)
     else:
         print("[INFO] --no-flash specified, skipping download step.")
 
