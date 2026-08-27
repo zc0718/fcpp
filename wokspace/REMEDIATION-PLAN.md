@@ -148,6 +148,10 @@
 
 **semantic-release 端到端验证（一次性本地裸仓库模拟）**: 锚点 `v1.0.0`（指向 main 的 initial commit，已推送 origin）→ 29 提交全部正确分类（emoji scope 解析生效）→ 版本自增 **1.0.0 → 1.0.1（patch）** → exec 改写 metadata.json 版本 → CHANGELOG 生成（emoji 提交全部入列）→ release commit `chore(release): 1.0.1 [skip ci]` → tag `v1.0.1` 推送发布。模拟方法：clone + 本地 bare remote（`file://` URL）+ `--branches validation` + 去 github 插件的临时配置（本地无 GH token）。真实环境由 CI 的 `GITHUB_TOKEN` + main 分支完成同样流程。
 
+**F12（main 真实发布捕获）**: `semantic-release --extends` 的相对路径 `.json` 走 ESM 模块解析 → `MODULE_NOT_FOUND`（绝对路径正常）；且 `cmd | tee` 在无 pipefail 时吞掉退出码导致假绿。已改 `$GITHUB_WORKSPACE` 绝对路径 + `PIPESTATUS` 显式传播 + 成功路径 `::notice::` 诊断。
+
+**main 全量验证（2026-08-27）**: ① run #14 全绿：commit-lint / schema / controller / build(ubuntu Debug+Release, windows) / tests(5/5) / security 原生门禁；docs/release 按开关正确 skipped；② run #28 真实发布成功：`v1.0.1` tag + `chore(release): 1.0.1 [skip ci]` + metadata version 1.0.1 + CHANGELOG 自动生成（含全部 emoji 提交与 GitHub 链接）+ GitHub Release；③ run #29 终态（Debug + release 关 + build/tests/security 开）门禁全绿。hetai-package-matrix 对无 `:fire:` 的 push 正确 skipped（自托管不误触发）。dependabot 自动开出 `build(deps):` 前缀 PR（conventional ✓）。
+
 ## 9. CI 观察方式（本环境 gh 未登录）
 
 - 匿名 API：`curl -s https://api.github.com/repos/zc0718/fcpp/actions/runs?per_page=5`（公开仓库可读）
