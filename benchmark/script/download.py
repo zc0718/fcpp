@@ -112,22 +112,8 @@ def _flash_pyocd(args):
     run(cmd)
 
 
-def _flash_jlink(args):
-    if not args.device:
-        print("jlink 模式需要 --device，例如 BAT32G157GK64FB")
-        sys.exit(1)
-
-    jlink_exe = shutil.which("JLinkExe")
-    if jlink_exe is None:
-        print("未找到命令: JLinkExe，请先安装 SEGGER J-Link 软件包")
-        sys.exit(1)
-
-    binary = _check(args.binary, RE_LOCAL_PATH, "--binary")
-    device = _check(args.device, RE_DEVICE, "--device")
-    speed = _check(str(args.speed), RE_SPEED, "--speed")
-    addr = _check(args.addr, RE_HEX_ADDR, "--addr")
-    probe = _check(args.probe, RE_PROBE, "--probe") if args.probe else None
-
+def _jlink_script(args, binary, addr):
+    """生成 J-Link Commander 脚本；.img 先转临时 .bin。返回 (script_lines, temp_bin_path)。"""
     ext = os.path.splitext(binary)[1].lower()
     jlink_binary_path = binary
     temp_bin_path = None
@@ -156,7 +142,11 @@ def _flash_jlink(args):
     if args.run:
         script_lines.append("g")
     script_lines.append("q")
+    return script_lines, temp_bin_path
 
+
+def _run_jlink_exe(args, jlink_exe, device, speed, probe, script_lines, temp_bin_path):
+    """写入脚本并执行 JLinkExe，结束后清理临时文件。"""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".jlink", delete=False) as f:
         script_path = f.name
         f.write("\n".join(script_lines) + "\n")
@@ -184,6 +174,26 @@ def _flash_jlink(args):
                 os.remove(temp_bin_path)
             except OSError:
                 pass
+
+
+def _flash_jlink(args):
+    if not args.device:
+        print("jlink 模式需要 --device，例如 BAT32G157GK64FB")
+        sys.exit(1)
+
+    jlink_exe = shutil.which("JLinkExe")
+    if jlink_exe is None:
+        print("未找到命令: JLinkExe，请先安装 SEGGER J-Link 软件包")
+        sys.exit(1)
+
+    binary = _check(args.binary, RE_LOCAL_PATH, "--binary")
+    device = _check(args.device, RE_DEVICE, "--device")
+    speed = _check(str(args.speed), RE_SPEED, "--speed")
+    addr = _check(args.addr, RE_HEX_ADDR, "--addr")
+    probe = _check(args.probe, RE_PROBE, "--probe") if args.probe else None
+
+    script_lines, temp_bin_path = _jlink_script(args, binary, addr)
+    _run_jlink_exe(args, jlink_exe, device, speed, probe, script_lines, temp_bin_path)
 
 
 def main():

@@ -233,7 +233,7 @@ def deploy_linux(cfg: dict) -> None:
         cmd += ["--host", _check(ssh_host, RE_SSH_HOST, "ssh_host")]
 
     print(f">> {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True)  # NOSONAR: 全部配置值已逐一过 re.fullmatch 白名单，argv 列表无 shell。
 
 
 def flash(cfg: dict) -> None:
@@ -282,7 +282,7 @@ def flash(cfg: dict) -> None:
             cmd += ["--probe", _check(cfg["pyocd_probe"], RE_PROBE, "pyocd_probe")]
 
     print(f">> {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True)  # NOSONAR: 全部配置值已逐一过 re.fullmatch 白名单，argv 列表无 shell。
 
 
 def main():
