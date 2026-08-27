@@ -45,11 +45,12 @@ Wrap the `#include` area with `// Conan::ImportStart` / `// Conan::ImportEnd`; t
 
 ## Format / Static Checks（格式化/静态检查）
 
-- `.clang-format`: C pointer right-aligned, C++ left-aligned; C11/Cpp17; 120 cols; no include sort; no comment reflow. 格式规则。
+- `.clang-format`: 多段式（`---` 分隔）：公共段 + `Language: Cpp` 段（Left 指针对齐、c++17）+ `Language: C` 段（Right 指针对齐，仅适用于 `.c`）。`.h` 被 clang-format 视为 C++。120 cols; no include sort; no comment reflow; `MaxEmptyLinesToKeep: 3` 保护 2 空行规则。格式规则。
+- 宏命名规则由 clang-tidy `cppcoreguidelines-macro-usage` 强制（`^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$`），不在 `.clang-format` 中。
 - `.clang-tidy`: `bugprone-*` + `performance-*` + `cppcoreguidelines-avoid-magic-numbers`; **WarningsAsErrors: '*'**. warning 即失败。
 - Local check（本地自查）:
   ```bash
-  clang-format --dry-run --Werror include/ src/
+  find include src -type f \\( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \\) -exec clang-format --dry-run --Werror {} +
   clang-tidy src/*.cpp -- -std=c++17
   ```
 

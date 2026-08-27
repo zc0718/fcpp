@@ -4,7 +4,7 @@
     {
       "label": "fcpp: format-check",
       "type": "shell",
-      "command": "clang-format --dry-run --Werror include/ src/",
+      "command": "find include src -type f \\( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \\) -exec clang-format --dry-run --Werror {} +",
       "problemMatcher": []
     },
     {

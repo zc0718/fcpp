@@ -118,9 +118,10 @@
  * @version 1.0.3 change to left-value argument
  * @version 1.0.4 change to left-value return
  */
-template <typename T, typename F>
-T& inplace_transform(T& a, F f) {
-    for (auto& ele: a) { f(ele); }
+template <typename T, typename F> T& inplace_transform(T& a, F f) {
+    for (auto& ele : a) {
+        f(ele);
+    }
     return a;
 }
 

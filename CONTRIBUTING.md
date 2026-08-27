@@ -34,7 +34,7 @@ pip install pre-commit && pre-commit install
 
 # 质量自查
 npx ajv validate -s metadata.schema.json -d metadata.json --spec=draft7
-clang-format --dry-run --Werror include/ src/
+find include src -type f \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) -exec clang-format --dry-run --Werror {} +
 clang-tidy src/*.cpp -- -std=c++17
 
 # 构建 + 测试

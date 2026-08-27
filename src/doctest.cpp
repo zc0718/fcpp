@@ -5,9 +5,7 @@
 
 
 
-auto version_test_func() {
-    std::cout << "the version_test_func function" << std::endl;
-};
+auto version_test_func() { std::cout << "the version_test_func function" << std::endl; };
 
 
 

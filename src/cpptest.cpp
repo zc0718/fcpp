@@ -25,9 +25,7 @@ void test_hello() { std::cout << "CPP Compiler is ready!" << std::endl; };
  */
 void test_eigen() {
     Eigen::Matrix3d A;
-    A << 1, 2, 3,
-         4, 5, 6,
-         7, 8, 9;
+    A << 1, 2, 3, 4, 5, 6, 7, 8, 9;
     std::cout << "matrix A:\n" << A << "; Eigen Matrix test done!" << std::endl;
 }
 
@@ -62,8 +60,8 @@ void test_cpp_zlib() {
     unsigned char rec[128] = {0};
     uLong len_out = sizeof(out);
     uLong len_rec = sizeof(rec);
-    int compress_result = compress(out, &len_out, reinterpret_cast<const Bytef*>(in),
-        static_cast<uLong>(strlen(in) + 1));
+    int compress_result =
+        compress(out, &len_out, reinterpret_cast<const Bytef*>(in), static_cast<uLong>(strlen(in) + 1));
     if (compress_result != Z_OK) {
         std::cerr << "Compression failed with error code: " << compress_result << std::endl;
         return;
@@ -73,8 +71,7 @@ void test_cpp_zlib() {
         std::cerr << "Decompression failed with error code: " << uncompress_result << std::endl;
         return;
     }
-    std::cout << "Original: " << in
-              << "; Decompressed: " << reinterpret_cast<char*>(rec)
-              << "; zlib in C++ test done!" << std::endl;
+    std::cout << "Original: " << in << "; Decompressed: " << reinterpret_cast<char*>(rec) << "; zlib in C++ test done!"
+              << std::endl;
 }
 #endif /* __ARM_EABI__ */

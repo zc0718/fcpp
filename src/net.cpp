@@ -7,7 +7,6 @@
 
 
 
-
 // dlib::matrix<unsigned char> generate_random_image(dlib::rand& rnd) {
 //     dlib::matrix<unsigned char> img(28, 28);
 //     for (long r = 0; r < img.nr(); ++r) {
