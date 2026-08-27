@@ -262,7 +262,7 @@ Examples: `feat(:fire:): cross-compile support`, `test(:beer:): vector add cases
 `chore(:package:): prepare release`. As a soft rule, the emoji anywhere in the message also triggers the
 pipeline, but the parenthesized placement is the recommended convention.
 
-Versioning is driven by **semantic-release** (`semver-release.yml` + `.releaserc.json`): the commit prefix
+Versioning is driven by **semantic-release** (`semver-release.yml` + `.github/misc/.releaserc.json`): the commit prefix
 decides the jump — `feat` → minor, `fix`/`perf` → patch, `BREAKING CHANGE`/`!` → major. A release
 generates `CHANGELOG.md` and rewrites the `version` in `metadata.json`. (The legacy
 commit-base-versioning mechanism has been removed.)

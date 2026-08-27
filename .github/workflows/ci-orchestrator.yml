@@ -66,7 +66,7 @@ jobs:
           echo ""
           echo "============================================"
 
-  # Step 2b: Enforce commit conventions (canonical form, see commitlint.config.js)
+  # Step 2b: Enforce commit conventions (canonical form, see .github/misc/commitlint.config.js)
   commit-lint:
     name: Commit Lint
     runs-on: ubuntu-latest
@@ -93,14 +93,14 @@ jobs:
           FROM="${{ github.event.before }}"
           if [[ "$FROM" == "0000000000000000000000000000000000000000" ]]; then
             # First push of a branch: only the last commit exists locally
-            npx commitlint --from HEAD~1 --to HEAD --verbose
+            npx commitlint --config .github/misc/commitlint.config.js --from HEAD~1 --to HEAD --verbose
           else
-            npx commitlint --from "$FROM" --to HEAD --verbose
+            npx commitlint --config .github/misc/commitlint.config.js --from "$FROM" --to HEAD --verbose
           fi
 
       - name: Lint PR title
         if: github.event_name == 'pull_request'
-        run: printf '%s' "${{ github.event.pull_request.title }}" | npx commitlint
+        run: printf '%s' "${{ github.event.pull_request.title }}" | npx commitlint --config .github/misc/commitlint.config.js
 
   # Step 2c: Validate metadata.json against the machine-readable contract
   schema-check:
@@ -121,7 +121,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Validate metadata.json
-        run: npx ajv validate -s metadata.schema.json -d metadata.json --spec=draft7
+        run: npx ajv validate -s .github/misc/metadata.schema.json -d metadata.json --spec=draft7
 
   # Step 3: Trigger downstream workflows based on controller outputs
   

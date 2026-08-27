@@ -12,14 +12,20 @@ repos:
 
   - repo: local
     hooks:
-      - id: clang-format
-        name: clang-format
-        entry: clang-format --dry-run --Werror
+      - id: clang-format-c
+        name: clang-format-c
+        entry: clang-format --dry-run --Werror --style=file:.github/misc/.clang-format-c
         language: system
-        files: '\.(c|h|cpp|hpp)$'
+        files: '\.(c|h)$'
+
+      - id: clang-format-cpp
+        name: clang-format-cpp
+        entry: clang-format --dry-run --Werror --style=file:.github/misc/.clang-format-cpp
+        language: system
+        files: '\.(cpp|hpp)$'
 
       - id: commitlint
         name: commitlint
-        entry: npx commitlint --edit
+        entry: npx commitlint --edit --config .github/misc/commitlint.config.js
         language: system
         stages: [commit-msg]

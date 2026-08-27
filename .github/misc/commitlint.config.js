@@ -1,5 +1,5 @@
 // fcpp commit conventions — single source of truth for CI commit gates.
-// MUST stay in sync with `.releaserc.json` parserOpts (semantic-release);
+// MUST stay in sync with `.github/misc/.releaserc.json` parserOpts (semantic-release);
 // both files use the same headerPattern, keep them identical when editing.
 //
 // Canonical form: <type>(<emoji|scope>)?!?: <description>

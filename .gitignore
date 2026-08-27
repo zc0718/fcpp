@@ -3,6 +3,8 @@
 /cmake-build-debug/
 .envs
 node_modules/
+__pycache__/
+*.pyc
 
 # .vscode/ recommended files ARE committed (extensions/settings/tasks)
 # personal machine settings go into .vscode/ and must not be committed
