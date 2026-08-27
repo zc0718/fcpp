@@ -100,10 +100,13 @@ jobs:
   megalinter:
     name: MegaLinter (advisory)
     runs-on: ubuntu-latest
+    # The MegaLinter run is advisory (see F7). It only needs to read the repo
+    # and upload its report artifact; it does NOT need to write back to GitHub.
+    # Keeping this read-only also lets the ci-orchestrator call this reusable
+    # workflow with a read-only token (GitHub caps reusable-workflow perms by
+    # the caller, and a write job here would force the caller into write-all).
     permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+      contents: read
 
     steps:
       - name: Checkout Code
