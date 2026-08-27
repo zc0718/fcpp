@@ -20,7 +20,7 @@ COPYPASTE_JSCPD_ARGUMENTS:
 
 REPOSITORY_GITLEAKS_ARGUMENTS:
   - "-c"
-  - ".github/misc/.gitleaks.toml"
+  - ".gitleaks.toml"
   - "--verbose"
 
 REPOSITORY_SEMGREP_ARGUMENTS:
@@ -49,21 +49,21 @@ REPOSITORY_DEVSKIM_ARGUMENTS:
 
 C_CLANG_TIDY:
   ENABLE: true
-  CONFIG_FILE: ".github/misc/.clang-tidy"
+  CONFIG_FILE: ".clang-tidy"
   FILE_EXTENSIONS: [".h", ".c"]
 
 CPP_CLANG_TIDY:
   ENABLE: true
-  CONFIG_FILE: ".github/misc/.clang-tidy"
+  CONFIG_FILE: ".clang-tidy"
   FILE_EXTENSIONS: [".hpp", ".cpp"]
 
 C_CLANG_FORMAT:
   ENABLE: true
-  CONFIG_FILE: ".github/misc/.clang-format"
+  CONFIG_FILE: ".clang-format"
 
 CPP_CLANG_FORMAT:
   ENABLE: true
-  CONFIG_FILE: ".github/misc/.clang-format"
+  CONFIG_FILE: ".clang-format"
 
 SARIF_REPORTER: true
 MARKDOWN_SUMMARY_REPORTER: true

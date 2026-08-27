@@ -17,12 +17,9 @@ on:
         type: string
         default: 'false'
 
-# Comment env block if you do not want to apply fixes
 env:
-  # Apply linter fixes configuration
-  APPLY_FIXES: all
-  APPLY_FIXES_EVENT: pull_request
-  APPLY_FIXES_MODE: commit
+  # Strict gate mode: never auto-fix in CI, lint failures fail the job.
+  APPLY_FIXES: none
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}-security
@@ -63,7 +60,6 @@ jobs:
       - name: MegaLinter (with Grafana reporter)
         if: steps.check_grafana.outputs.available == 'true'
         uses: oxsecurity/megalinter@v8
-        continue-on-error: true
         id: ml_grafana
         env:
           VALIDATE_ALL_CODEBASE: ${{ inputs.validate_all_codebase }}
@@ -81,7 +77,6 @@ jobs:
       - name: MegaLinter (artifact-only)
         if: steps.check_grafana.outputs.available != 'true'
         uses: oxsecurity/megalinter@v8
-        continue-on-error: true
         id: ml_fallback
         env:
           VALIDATE_ALL_CODEBASE: ${{ inputs.validate_all_codebase }}
