@@ -39,7 +39,15 @@ jobs:
       - name: Install toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format clang-tidy libeigen3-dev zlib1g-dev libpcre2-dev libetl-dev
+          sudo apt-get install -y clang-format clang-tidy libeigen3-dev zlib1g-dev libpcre2-dev
+
+      # ETL is header-only and has no Ubuntu package; use the release archive
+      # pinned to the same version as conandata.yml (etl/20.47.1).
+      - name: Install ETL headers (pinned 20.47.1)
+        run: |
+          curl -sL -o /tmp/etl.zip https://github.com/ETLCPP/etl/archive/refs/tags/20.47.1.zip
+          unzip -q /tmp/etl.zip -d /tmp/etl-src
+          echo "ETL_INC=/tmp/etl-src/etl-20.47.1/include" >> "$GITHUB_ENV"
 
       # Required gate: formatting must be clean (same config as local dev)
       - name: clang-format gate
@@ -54,10 +62,10 @@ jobs:
         run: |
           shopt -s nullglob
           for f in src/*.c; do
-            clang-tidy --config-file=.clang-tidy "$f" -- -std=c11 -Iinclude -I/usr/include/eigen3
+            clang-tidy --config-file=.clang-tidy "$f" -- -std=c11 -Iinclude -I/usr/include/eigen3 -isystem "$ETL_INC"
           done
           for f in src/*.cpp; do
-            clang-tidy --config-file=.clang-tidy "$f" -- -std=c++17 -Iinclude -I/usr/include/eigen3
+            clang-tidy --config-file=.clang-tidy "$f" -- -std=c++17 -Iinclude -I/usr/include/eigen3 -isystem "$ETL_INC"
           done
 
       # Required gate: secrets scan with pinned binary version
