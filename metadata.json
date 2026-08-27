@@ -22,7 +22,7 @@
   "cmake_version": "4.0.1",
   "build_cppstd": "17",
   "build_cstd": "11",
-  "build_type": "Release",
+  "build_type": "Debug",
   "activate_code_coverage": false,
   "is_shared": false,
   "is_header": false,
@@ -89,7 +89,7 @@
   "workflow_triggers": {
     "build": true,
     "tests": true,
-    "release": true,
+    "release": false,
     "docs": false,
     "security_scan": true
   }
