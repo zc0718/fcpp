@@ -35,14 +35,14 @@
   "doc_versions": ["1.0", "2.0"],
   "doc_doxygen_folders": ["include", "src", "docs/doxygen/dox"],
   "doc_doxygen_suffix": ["h", "c", "hpp", "cpp", "dox", "cxx"],
-  "trigger_tests": false,
-  "saving_tests_log": false,
+  "trigger_tests": true,
+  "saving_tests_log": true,
   "enable_python_bindings": false,
   "workflow_triggers": {
-    "build": false,
-    "tests": false,
+    "build": true,
+    "tests": true,
     "release": false,
     "docs": false,
-    "security_scan": false
+    "security_scan": true
   }
 }
