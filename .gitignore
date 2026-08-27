@@ -16,3 +16,5 @@ node_modules/
 
 # test framework
 /test_package/test/export/
+/test_package/build/
+CMakeUserPresets.json
