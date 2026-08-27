@@ -5,8 +5,7 @@ name: CI Orchestrator
 
 on:
   push:
-    # [validation-only] added 'validation' for IaC remediation verification; revert before merge
-    branches: [main, validation]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
