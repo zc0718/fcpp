@@ -150,7 +150,7 @@ jobs:
       # Always upload artifacts as a safety net (works for both paths)
       - name: Archive production artifacts
         if: success() || failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: MegaLinter reports
           include-hidden-files: "true"
