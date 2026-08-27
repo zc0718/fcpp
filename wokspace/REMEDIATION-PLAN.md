@@ -69,9 +69,9 @@
 | V2 parser 兼容（P0-1 核心） | node 脚本用 releaserc 的 headerPattern 实测 6 种提交形态 | 本地 | ✅ 6/6 PASS |
 | V3 metadata schema | `npx ajv validate -s metadata.schema.json -d metadata.json --spec=draft7` | 本地 | ✅ valid |
 | V4 clang-format | `pip install clang-format`（venv）后 `find ... -exec clang-format --dry-run --Werror {} +` | 本地 | ✅ exit 0 |
-| V5 clang-tidy | 本地无 clang-tidy → CI MegaLinter 门禁验证（validation push） | CI | ⏳ 观察中 |
+| V5 clang-tidy | 本地无 clang-tidy → pip 22 本地复现（conan 缓存头 + `-isystem`） + CI 原生门禁（apt 18） | 双验 | ✅ 本地 TIDY-CLEAN；run #13 CI 门禁全绿 |
 | V6 本地构建 | `conan create . -s build_type=Debug --build=missing` | 本地 | ✅ 构建 + 5/5 测试通过 |
-| V7 CI 端到端 | validation push 触发 orchestrator（门禁 + build/tests/security） | GitHub | 🔄 迭代中（见 §9） |
+| V7 CI 端到端 | validation push 触发 orchestrator（门禁 + build/tests/security） | GitHub | ✅ 门禁/构建/测试全绿（run #6/#7）；security 原生门禁全绿（run #13）；Windows advisory（F6） |
 | V8 push/tag 验证 | `git push -u origin validation --tags` + `git ls-remote` | GitHub | ✅ 分支+annotated tag 已上远端 |
 
 ## 5. Git 验证流程
