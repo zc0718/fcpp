@@ -94,10 +94,11 @@ jobs:
           activate_code_coverage=$(jq -r '.activate_code_coverage // false | tostring | ascii_downcase' metadata.json)
           
           # Read workflow_triggers flags (fail-loud: missing switch aborts CI, no silent defaults)
+          # NOTE: jq `//` treats `false` as falsy — use has() for existence, read value separately.
           for key in build tests release docs security_scan; do
-            val=$(jq -r ".workflow_triggers.$key // empty" metadata.json)
-            [[ -n "$val" ]] || { echo "❌ metadata.json missing workflow_triggers.$key"; exit 1; }
-            eval "wf_$key=$(echo "$val" | tr '[:upper:]' '[:lower:]')"
+            jq -e --arg k "$key" '.workflow_triggers | has($k)' metadata.json >/dev/null \
+              || { echo "❌ metadata.json missing workflow_triggers.$key"; exit 1; }
+            eval "wf_$key=$(jq -r --arg k "$key" '.workflow_triggers[$k] | tostring | ascii_downcase' metadata.json)"
           done
           
           # Output all values
