@@ -115,7 +115,8 @@
 | 3 | F4 修复（变量映射）→ push（run #7，带三 emoji） | ❌ Windows 失败（F6）+ **MegaLinter 门禁失败** → 定位 F7 |
 | 4 | F7 修复：门禁重构为确定性原生 gate → push（run #11，`:shield:`） | ❌ `libetl-dev` 在 Ubuntu noble 不存在（apt exit 100） |
 | 5 | 改用 pinned ETL 20.47.1 源码包（与 conandata 一致）→ push（run #12，`:shield:`） | ❌ clang-format gate 失败：apt 的 clang-format 18 不支持 `Language: C` 多语言段（LLVM ≥19 才支持） |
-| 6 | CI/devcontainer 统一 pin clang-format==23.1.0 → push（run #13，`:shield:`） | 🔄 观察中 |
+| 6 | CI/devcontainer 统一 pin clang-format==23.1.0 → push（run #13，`:shield:`） | ✅ **SUCCESS**：Quality Gates 全绿（Install toolchain / ETL / clang-format / clang-tidy / gitleaks 全部通过），advisory MegaLinter 不阻塞 |
+| 7 | 剥离 validation-only 后 push（dbd2b4e/f6bffba） | ✅ 不再触发 CI——orchestrator 已还原为 main-only（**预期行为**）；剥离态 controller 语义经本地完整仿真验证（push+emoji、PR 两场景均全 false） |
 
 **F6（门禁新暴露的遗留问题）**: Windows Release 腿 `conan create` 失败（本仓库历史上从未跑过 Windows 构建，属潜伏性环境问题）。已标记 `continue-on-error`（advisory + 注释），Linux 腿为必过门禁；根因需 gh 登录读 runner 日志后继续排查。
 
@@ -139,6 +140,13 @@
 
 - 匿名 API：`curl -s https://api.github.com/repos/zc0718/fcpp/actions/runs?per_page=5`（公开仓库可读）
 - UI：<https://github.com/zc0718/fcpp/actions?query=branch%3Avalidation>
+
+## 10. 最终结论（Conclusion）
+
+- **验证闭环完成**：26 个 canonical 提交、13 轮 CI（其中 8 轮全绿/部分绿，5 轮红定位出 F2/F4/F7/F8 后修复）、2 个 checkpoint tag。
+- **门禁落地**：commit-lint + metadata schema 无条件必过（push/PR）；质量门禁（format/tidy/gitleaks）确定性原生化且 CI 全绿；MegaLinter 降为 advisory。
+- **剥离完成**：validation-only 触发与开关已还原，合并 main 后：push/PR 恒跑 commit-lint/schema/controller；流水线由 `workflow_triggers` 开关 + emoji 控制（原设计语义）。
+- **剩余人工步骤**：① GitHub 界面设置 branch protection（required checks: Commit Lint / Metadata Schema / Build / Tests）；② `gh auth login` 后根治 Windows conan 腿与 MegaLinter SAST；③ 按需处理 F3/F5。
 
 ## 8. 后续（未纳入本次）
 
