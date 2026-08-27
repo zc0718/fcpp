@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/zc0718/fcpp/compare/v1.0.1...v1.0.2) (2026-08-27)
+
+### Bug Fixes
+
+* **:bug::** derive release repository url dynamically instead of hardcoding ([3a615db](https://github.com/zc0718/fcpp/commit/3a615dbbfa3839a1d7c4e8ad724165053eeef1fb))
+* **:package::** release repository cleanup validation ([32e1125](https://github.com/zc0718/fcpp/commit/32e1125c43a211ba4000fcc889aa9f24ac268915))
+
 ## [1.0.1](https://github.com/zc0718/fcpp/compare/v1.0.0...v1.0.1) (2026-08-27)
 
 ### Bug Fixes
