@@ -1,5 +1,5 @@
 {
-  "name": "fcpp dev",
+  "name": "cpp-library-dev",
   "build": {
     "dockerfile": "Dockerfile"
   },
