@@ -110,7 +110,9 @@
 | 0 | 本地 V1–V4、V6 全绿后 push validation（run #2） | ❌ controller `Read metadata.json` 失败 |
 | 1 | 定位 F2（jq `//` 陷阱）→ `fix(:bug:)` 修复 → push（run #4） | ✅ 全绿；fix 提交无 emoji → 下游全 skipped（emoji 语义实证） |
 | 2 | 三 emoji 验证提交（run #6） | ✅ Commit Lint/Schema/Controller/Tests/Build(ubuntu Debug+Release) 全绿；❌ Security 意外 skipped → 定位 F4 |
-| 3 | F4 修复（变量映射）→ push（run #7，带三 emoji） | 🔄 观察中 |
+| 3 | F4 修复（变量映射）→ push（run #7，带三 emoji） | 🔄 进行中：Commit Lint/Schema/Controller/Build(ubuntu×2)/Tests 全绿，Security Scan(MegaLinter) 已触发运行中 |
+
+**F6（门禁新暴露的遗留问题）**: Windows Release 腿 `conan create` 失败（本仓库历史上从未跑过 Windows 构建，属潜伏性环境问题）。已标记 `continue-on-error`（advisory + 注释），Linux 腿为必过门禁；根因需 gh 登录读 runner 日志后继续排查。
 
 **F1（审计外新发现）**: 原 `.clang-format` 配置 4 处致命错误，从未被真实执行过：① 两个 `Language:` 键同一 YAML 文档（缺 `---` 分隔）；② `Standard: Cpp17`/`C11` 枚举非法（应 `c++17`，C 段不支持）；③ `Extensions` 未知键；④ `MacroDefinitionName` 未知键（宏命名由 clang-tidy `cppcoreguidelines-macro-usage` 负责）。已重写为合法多段配置并 `style(:art:)` 归一化全部源码；`.h` 按 clang-format 规则归入 C++ 段（仓库 C 头无指针，无影响）。
 
@@ -121,6 +123,8 @@
 **F4（验证循环捕获）**: `security_scan` JSON 键 ≠ `wf_security` 变量后缀，eval 循环生成了 `wf_security_scan`，导致 security 触发被静默关闭。已改为显式 pair 映射（`"security security_scan"`）。教训：本地复验必须打印全部变量。
 
 **F5（审计外新发现，未修复）**: orchestrator 的 `workflow_dispatch.commit_messages` 输入是桩——compute_triggers 仅对 push 事件生效，dispatch 传入的 emoji 不会触发任何流水线。建议后续把 EVENT_NAME 判断扩展为 `push|workflow_dispatch`。
+
+**F6（见上）**: Windows conan 构建历史未验证，门禁严格化后暴露失败，暂以 advisory 处理。
 
 ## 9. CI 观察方式（本环境 gh 未登录）
 
