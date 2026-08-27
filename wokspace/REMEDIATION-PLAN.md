@@ -140,6 +140,14 @@
 
 **分层重构（用户要求）**: CI 调用的工具配置统一迁入 `.github/misc/`（clang-format 双配置、clang-tidy、gitleaks、mega-linter、releaserc、commitlint、schema、pre-commit）；治理文件迁入 `.github/`（CODEOWNERS、CONTRIBUTING）；根目录仅保留框架强制文件（npm/conan/cmake/Doxyfile/editorconfig/gitignore/.vscode/.devcontainer）。交叉验证证据：模块生成 `_get_export_objects` 在格式化后仍能提取 exporter/attacher（cpptest.hpp 4 段、cpptest.cpp 3+2 段、ctest.c 3 段）；`conanfile.py` 按 `split('\n\n')` 切分（2~3 空行均兼容）；`docs/build.py` 硬引用根目录 `Doxyfile`/`metadata.json`（必须留根）。
 
+**F10（发布验证捕获）**: release-notes-generator 默认 parserOpts 不识别 emoji scope → CHANGELOG 会丢提交（version 自增但 notes 为空）。已加与 commit-analyzer 相同的 parserOpts。
+
+**F11（发布演练捕获）**: `preset: "conventionalcommits"` 依赖 `conventional-changelog-conventionalcommits` 包，未进 package.json → 真实 `npm ci` 环境发布必挂。已补 devDependency。
+
+**硬编码审计**: `.github/` 无与 `metadata.json.name` 绑定的硬编码（workflows 全经 controller 动态 `pkg_name`）；发现项均为注释/标题类 + schema `$id`（已中和为 `https://schemas.fcpp.dev/metadata.json`）；CODEOWNERS `@zc0718` 为按设计每仓库必改项。
+
+**semantic-release 端到端验证（一次性本地裸仓库模拟）**: 锚点 `v1.0.0`（指向 main 的 initial commit，已推送 origin）→ 29 提交全部正确分类（emoji scope 解析生效）→ 版本自增 **1.0.0 → 1.0.1（patch）** → exec 改写 metadata.json 版本 → CHANGELOG 生成（emoji 提交全部入列）→ release commit `chore(release): 1.0.1 [skip ci]` → tag `v1.0.1` 推送发布。模拟方法：clone + 本地 bare remote（`file://` URL）+ `--branches validation` + 去 github 插件的临时配置（本地无 GH token）。真实环境由 CI 的 `GITHUB_TOKEN` + main 分支完成同样流程。
+
 ## 9. CI 观察方式（本环境 gh 未登录）
 
 - 匿名 API：`curl -s https://api.github.com/repos/zc0718/fcpp/actions/runs?per_page=5`（公开仓库可读）
