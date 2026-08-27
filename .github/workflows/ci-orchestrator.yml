@@ -21,9 +21,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  # Read-only at top level; jobs that need write (release) declare it on the
+  # reusable workflow they call (semver-release.yml).
+  contents: read
 
 jobs:
   # Step 1: Call the metadata controller to analyze metadata.json
@@ -95,16 +95,16 @@ jobs:
           FROM="$EVENT_BEFORE"
           if [[ "$FROM" == "0000000000000000000000000000000000000000" ]]; then
             # First push of a branch: only the last commit exists locally
-            npx commitlint --config .github/misc/commitlint.config.js --from HEAD~1 --to HEAD --verbose
+            ./node_modules/.bin/commitlint --config .github/misc/commitlint.config.js --from HEAD~1 --to HEAD --verbose
           else
-            npx commitlint --config .github/misc/commitlint.config.js --from "$FROM" --to HEAD --verbose
+            ./node_modules/.bin/commitlint --config .github/misc/commitlint.config.js --from "$FROM" --to HEAD --verbose
           fi
 
       - name: Lint PR title
         if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: printf '%s' "$PR_TITLE" | npx commitlint --config .github/misc/commitlint.config.js
+        run: printf '%s' "$PR_TITLE" | ./node_modules/.bin/commitlint --config .github/misc/commitlint.config.js
 
   # Step 2c: Validate metadata.json against the machine-readable contract
   schema-check:
@@ -125,7 +125,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Validate metadata.json
-        run: npx ajv validate -s .github/misc/metadata.schema.json -d metadata.json --spec=draft7
+        run: ./node_modules/.bin/ajv validate -s .github/misc/metadata.schema.json -d metadata.json --spec=draft7
 
   # Step 3: Trigger downstream workflows based on controller outputs
   

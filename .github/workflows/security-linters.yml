@@ -61,7 +61,7 @@ jobs:
       - name: Install ETL headers (version from conandata.yml)
         run: |
           ETL_VER=$(python3 -c "import yaml; d=yaml.safe_load(open('conandata.yml')); print([r for r in d['requirements'] if r.startswith('etl/')][0].split('/')[1])")
-          curl -sL -o /tmp/etl.zip "https://github.com/ETLCPP/etl/archive/refs/tags/${ETL_VER}.zip"
+          curl --proto '=https' --proto-redir '=https' -sSL -o /tmp/etl.zip "https://github.com/ETLCPP/etl/archive/refs/tags/${ETL_VER}.zip"
           unzip -q /tmp/etl.zip -d /tmp/etl-src
           echo "ETL_INC=/tmp/etl-src/etl-${ETL_VER}/include" >> "$GITHUB_ENV"
 
@@ -92,7 +92,7 @@ jobs:
       # Required gate: secrets scan with pinned binary version
       - name: gitleaks gate
         run: |
-          curl -sL -o /tmp/gitleaks.tar.gz \
+          curl --proto '=https' --proto-redir '=https' -sSL -o /tmp/gitleaks.tar.gz \
             https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
           tar xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           /tmp/gitleaks detect -c .github/misc/.gitleaks.toml --no-banner
@@ -133,7 +133,7 @@ jobs:
       # the REQUIRED gates are the native quality-gates job above.
       - name: MegaLinter (with Grafana reporter)
         if: steps.check_grafana.outputs.available == 'true'
-        uses: oxsecurity/megalinter@v8
+        uses: oxsecurity/megalinter@e08c2b05e3dbc40af4c23f41172ef1e068a7d651
         continue-on-error: true
         id: ml_grafana
         env:
@@ -152,7 +152,7 @@ jobs:
       # Run MegaLinter WITHOUT Grafana API reporter as fallback
       - name: MegaLinter (artifact-only)
         if: steps.check_grafana.outputs.available != 'true'
-        uses: oxsecurity/megalinter@v8
+        uses: oxsecurity/megalinter@e08c2b05e3dbc40af4c23f41172ef1e068a7d651
         continue-on-error: true
         id: ml_fallback
         env:

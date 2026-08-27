@@ -43,7 +43,7 @@ jobs:
           # NOTE 1: `--extends` resolves relative paths as ESM modules and fails
           # with MODULE_NOT_FOUND for .json — always use the absolute path.
           # NOTE 2: repositoryUrl is derived from runner env, no hardcoded URL.
-          npx semantic-release -r "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --extends "$GITHUB_WORKSPACE/.github/misc/.releaserc.json" 2>&1 | tee /tmp/semantic-release.log
+          ./node_modules/.bin/semantic-release -r "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --extends "$GITHUB_WORKSPACE/.github/misc/.releaserc.json" 2>&1 | tee /tmp/semantic-release.log
           test "${PIPESTATUS[0]}" -eq 0
 
       - name: Verify metadata.json format preserved
