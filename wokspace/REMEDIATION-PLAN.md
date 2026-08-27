@@ -108,7 +108,8 @@
 | 轮次 | 事件 | 结果 |
 |---|---|---|
 | 0 | 本地 V1–V4、V6 全绿后 push validation（run #2） | ❌ controller `Read metadata.json` 失败 |
-| 1 | 定位 F2（jq `//` 陷阱）→ `fix(:bug:)` 修复 → push（run #4） | 🔄 观察中 |
+| 1 | 定位 F2（jq `//` 陷阱）→ `fix(:bug:)` 修复 → push（run #4） | ✅ 全绿；但 fix 提交无 emoji → 下游 build/tests/security 均 skipped（emoji 触发语义得到实证） |
+| 2 | 提交带 `:shield:`/`:building_construction:`/`:beer:` 的验证提交 → 触发完整下游链路 | 🔄 观察中 |
 
 **F1（审计外新发现）**: 原 `.clang-format` 配置 4 处致命错误，从未被真实执行过：① 两个 `Language:` 键同一 YAML 文档（缺 `---` 分隔）；② `Standard: Cpp17`/`C11` 枚举非法（应 `c++17`，C 段不支持）；③ `Extensions` 未知键；④ `MacroDefinitionName` 未知键（宏命名由 clang-tidy `cppcoreguidelines-macro-usage` 负责）。已重写为合法多段配置并 `style(:art:)` 归一化全部源码；`.h` 按 clang-format 规则归入 C++ 段（仓库 C 头无指针，无影响）。
 
