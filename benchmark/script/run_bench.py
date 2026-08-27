@@ -232,8 +232,9 @@ def deploy_linux(cfg: dict) -> None:
             return
         cmd += ["--host", _check(ssh_host, RE_SSH_HOST, "ssh_host")]
 
+    # 豁免理由见 wokspace/SONAR-IMPROVEMENT-PLAN.md §7：全部配置值已逐一过白名单校验，argv 列表无 shell。
     print(f">> {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)  # NOSONAR: 全部配置值已逐一过 re.fullmatch 白名单，argv 列表无 shell。
+    subprocess.run(cmd, check=True)  # NOSONAR
 
 
 def flash(cfg: dict) -> None:
@@ -281,8 +282,9 @@ def flash(cfg: dict) -> None:
         if cfg.get("pyocd_probe"):
             cmd += ["--probe", _check(cfg["pyocd_probe"], RE_PROBE, "pyocd_probe")]
 
+    # 豁免理由见 wokspace/SONAR-IMPROVEMENT-PLAN.md §7：全部配置值已逐一过白名单校验，argv 列表无 shell。
     print(f">> {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)  # NOSONAR: 全部配置值已逐一过 re.fullmatch 白名单，argv 列表无 shell。
+    subprocess.run(cmd, check=True)  # NOSONAR
 
 
 def main():
