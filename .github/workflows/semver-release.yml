@@ -37,8 +37,14 @@ jobs:
         run: |
           npx semantic-release --extends .github/misc/.releaserc.json 2>&1 | tee /tmp/semantic-release.log
 
+      - name: Emit release log
+        if: always()
+        run: |
+          echo "::notice::visible tags: $(git tag -l | tr '\n' ' ')"
+          echo "::notice::commits since v1.0.0: $(git rev-list v1.0.0..HEAD --count 2>/dev/null || echo N/A)"
+          tail -n 40 /tmp/semantic-release.log | sed 's/^/::notice::/'
+
       - name: Emit release log on failure
         if: failure()
         run: |
-          tail -n 30 /tmp/semantic-release.log | sed 's/^/::error::/'
           exit 1
