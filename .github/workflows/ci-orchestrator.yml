@@ -20,12 +20,10 @@ concurrency:
   group: orchestrator-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Permissions declared at workflow top level; the release reusable workflow is
-# called with secrets: inherit and needs write scopes.
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+# Least-privilege: NO workflow-level permissions block. Each job that needs the
+# GITHUB_TOKEN declares its own scoped permissions; every other job uses the
+# default read-only token. Release is a standalone workflow (semver-release.yml)
+# so it can carry its own write permissions without broadening this orchestrator.
 
 jobs:
   # Step 1: Call the metadata controller to analyze metadata.json
@@ -149,12 +147,9 @@ jobs:
       saving_tests_log: ${{ needs.controller.outputs.saving_tests_log }}
       activate_code_coverage: ${{ needs.controller.outputs.activate_code_coverage }}
 
-  release:
-    name: Release
-    needs: controller
-    if: needs.controller.outputs.trigger_release == 'true'
-    uses: ./.github/workflows/semver-release.yml
-    secrets: inherit
+  # Release is NOT triggered here. It runs as its own workflow
+  # (semver-release.yml) on push to main so it can hold scoped write
+  # permissions, keeping this orchestrator least-privilege.
 
   docs:
     name: Documentation
@@ -169,5 +164,4 @@ jobs:
     uses: ./.github/workflows/security-linters.yml
     with:
       validate_all_codebase: ${{ github.event_name == 'push' && 'true' || 'false' }}
-    secrets: inherit
 

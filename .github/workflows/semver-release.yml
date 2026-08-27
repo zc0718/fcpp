@@ -1,16 +1,41 @@
 name: Release
 
-# This workflow can be triggered in two ways:
-# 1. Via workflow_call from ci-orchestrator.yml (recommended)
-# 2. Directly on push (for backward compatibility)
+# Release runs standalone (on push to main) so it can hold scoped write
+# permissions and create tags/releases. It is gated by metadata.json:
+#   workflow_triggers.release == true  -> semantic-release may bump a version.
+# It is also still callable via workflow_call for manual/backward-compat use.
 
 on:
   workflow_call:
     # No inputs needed - this workflow uses secrets
+  push:
+    branches: [main]
 
 jobs:
+  gate:
+    name: Release Gate
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.gate.outputs.should_release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check metadata release trigger
+        id: gate
+        run: |
+          python3 - <<'PY'
+          import json
+          meta = json.load(open('metadata.json'))
+          enabled = bool(meta.get('workflow_triggers', {}).get('release', False))
+          print(f'::notice::workflow_triggers.release = {enabled}')
+          print(f'should_release={str(enabled).lower()}')
+          PY
+
   auto-release:
     name: Auto Release
+    needs: gate
+    if: needs.gate.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
