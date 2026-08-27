@@ -39,18 +39,31 @@ jobs:
       - name: Install toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-tidy libeigen3-dev zlib1g-dev libpcre2-dev
+          # Derive system packages from conandata.yml requirements so the gate
+          # follows dependency changes. When adding a new C/C++ dep whose headers
+          # appear in src/, extend the mapping below (see het-deps N1). Unknown
+          # deps are ignored here and surface as clang-tidy include errors.
+          DEPS=$(python3 - <<'PY'
+          import yaml
+          reqs = yaml.safe_load(open('conandata.yml'))['requirements']
+          mapping = {'zlib': 'zlib1g-dev', 'pcre2': 'libpcre2-dev', 'eigen': 'libeigen3-dev'}
+          pkgs = {mapping[r.split('/')[0]] for r in reqs if r.split('/')[0] in mapping}
+          print(' '.join(sorted(pkgs)))
+          PY
+          )
+          sudo apt-get install -y clang-tidy $DEPS
           # apt clang-format (v18 on noble) does NOT support the `Language: C`
           # config section (needs LLVM >= 19) — pin the pip build instead.
           python3 -m pip install clang-format==23.1.0
 
-      # ETL is header-only and has no Ubuntu package; use the release archive
-      # pinned to the same version as conandata.yml (etl/20.47.1).
-      - name: Install ETL headers (pinned 20.47.1)
+      # ETL is header-only and has no Ubuntu package; download the release
+      # archive at the version declared in conandata.yml (no hardcoded version).
+      - name: Install ETL headers (version from conandata.yml)
         run: |
-          curl -sL -o /tmp/etl.zip https://github.com/ETLCPP/etl/archive/refs/tags/20.47.1.zip
+          ETL_VER=$(python3 -c "import yaml; d=yaml.safe_load(open('conandata.yml')); print([r for r in d['requirements'] if r.startswith('etl/')][0].split('/')[1])")
+          curl -sL -o /tmp/etl.zip "https://github.com/ETLCPP/etl/archive/refs/tags/${ETL_VER}.zip"
           unzip -q /tmp/etl.zip -d /tmp/etl-src
-          echo "ETL_INC=/tmp/etl-src/etl-20.47.1/include" >> "$GITHUB_ENV"
+          echo "ETL_INC=/tmp/etl-src/etl-${ETL_VER}/include" >> "$GITHUB_ENV"
 
       # Required gate: formatting must be clean.
       # Private convention routes by language family: .c/.h -> C, .cpp/.hpp -> C++
