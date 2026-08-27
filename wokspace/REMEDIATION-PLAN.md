@@ -108,14 +108,19 @@
 | 轮次 | 事件 | 结果 |
 |---|---|---|
 | 0 | 本地 V1–V4、V6 全绿后 push validation（run #2） | ❌ controller `Read metadata.json` 失败 |
-| 1 | 定位 F2（jq `//` 陷阱）→ `fix(:bug:)` 修复 → push（run #4） | ✅ 全绿；但 fix 提交无 emoji → 下游 build/tests/security 均 skipped（emoji 触发语义得到实证） |
-| 2 | 提交带 `:shield:`/`:building_construction:`/`:beer:` 的验证提交 → 触发完整下游链路 | 🔄 观察中 |
+| 1 | 定位 F2（jq `//` 陷阱）→ `fix(:bug:)` 修复 → push（run #4） | ✅ 全绿；fix 提交无 emoji → 下游全 skipped（emoji 语义实证） |
+| 2 | 三 emoji 验证提交（run #6） | ✅ Commit Lint/Schema/Controller/Tests/Build(ubuntu Debug+Release) 全绿；❌ Security 意外 skipped → 定位 F4 |
+| 3 | F4 修复（变量映射）→ push（run #7，带三 emoji） | 🔄 观察中 |
 
 **F1（审计外新发现）**: 原 `.clang-format` 配置 4 处致命错误，从未被真实执行过：① 两个 `Language:` 键同一 YAML 文档（缺 `---` 分隔）；② `Standard: Cpp17`/`C11` 枚举非法（应 `c++17`，C 段不支持）；③ `Extensions` 未知键；④ `MacroDefinitionName` 未知键（宏命名由 clang-tidy `cppcoreguidelines-macro-usage` 负责）。已重写为合法多段配置并 `style(:art:)` 归一化全部源码；`.h` 按 clang-format 规则归入 C++ 段（仓库 C 头无指针，无影响）。
 
 **F2（验证循环捕获）**: jq `//` 把 `false` 当 falsy 处理，导致 fail-loud 检查把 `release=false`/`docs=false` 误判为"缺失"。已改 `has()` 存在性判断 + 独立取值。
 
 **F3（历史遗留，未修复）**: include/src 存在 3+ 连续空行（格式化前后数量不变），与"全局对象间恰好 2 空行"的模块生成规则不符，建议后续专门 style 提交归一化。
+
+**F4（验证循环捕获）**: `security_scan` JSON 键 ≠ `wf_security` 变量后缀，eval 循环生成了 `wf_security_scan`，导致 security 触发被静默关闭。已改为显式 pair 映射（`"security security_scan"`）。教训：本地复验必须打印全部变量。
+
+**F5（审计外新发现，未修复）**: orchestrator 的 `workflow_dispatch.commit_messages` 输入是桩——compute_triggers 仅对 push 事件生效，dispatch 传入的 emoji 不会触发任何流水线。建议后续把 EVENT_NAME 判断扩展为 `push|workflow_dispatch`。
 
 ## 9. CI 观察方式（本环境 gh 未登录）
 
