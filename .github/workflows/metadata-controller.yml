@@ -93,12 +93,12 @@ jobs:
           saving_tests_log=$(jq -r '.saving_tests_log // false | tostring | ascii_downcase' metadata.json)
           activate_code_coverage=$(jq -r '.activate_code_coverage // false | tostring | ascii_downcase' metadata.json)
           
-          # Read workflow_triggers flags (default to true for backward compatibility)
-          wf_build=$(jq -r '.workflow_triggers.build // true | tostring | ascii_downcase' metadata.json)
-          wf_tests=$(jq -r '.workflow_triggers.tests // true | tostring | ascii_downcase' metadata.json)
-          wf_release=$(jq -r '.workflow_triggers.release // true | tostring | ascii_downcase' metadata.json)
-          wf_docs=$(jq -r '.workflow_triggers.docs // true | tostring | ascii_downcase' metadata.json)
-          wf_security=$(jq -r '.workflow_triggers.security_scan // true | tostring | ascii_downcase' metadata.json)
+          # Read workflow_triggers flags (fail-loud: missing switch aborts CI, no silent defaults)
+          for key in build tests release docs security_scan; do
+            val=$(jq -r ".workflow_triggers.$key // empty" metadata.json)
+            [[ -n "$val" ]] || { echo "❌ metadata.json missing workflow_triggers.$key"; exit 1; }
+            eval "wf_$key=$(echo "$val" | tr '[:upper:]' '[:lower:]')"
+          done
           
           # Output all values
           echo "pkg_name=$pkg_name" >> $GITHUB_OUTPUT
@@ -204,6 +204,16 @@ jobs:
             fi
           fi
           
+          # Shift-left on pull_request: build/tests are required gates, no emoji needed
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            if [[ "$WF_BUILD" == "true" ]]; then
+              trigger_build="true"
+            fi
+            if [[ "$WF_TESTS" == "true" && "$BUILD_TYPE" == "Debug" && "$TRIGGER_TESTS_FLAG" == "true" ]]; then
+              trigger_tests="true"
+            fi
+          fi
+
           # Output trigger flags
           echo "trigger_build=$trigger_build" >> $GITHUB_OUTPUT
           echo "trigger_tests=$trigger_tests" >> $GITHUB_OUTPUT

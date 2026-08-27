@@ -8,6 +8,17 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit_messages:
+        description: 'Emoji trigger simulation (optional)'
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: orchestrator-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: write
@@ -21,8 +32,9 @@ jobs:
     uses: ./.github/workflows/metadata-controller.yml
     with:
       event_name: ${{ github.event_name }}
-      # For push events, join commit messages. For PRs, use an empty string
-      commit_messages: ${{ github.event_name == 'push' && join(github.event.commits.*.message, '\n') || '' }}
+      # For push events, join commit messages. For PRs, use an empty string.
+      # workflow_dispatch can simulate emoji triggers via input.
+      commit_messages: ${{ github.event_name == 'push' && join(github.event.commits.*.message, '\n') || (github.event_name == 'workflow_dispatch' && github.event.inputs.commit_messages) || '' }}
 
   # Step 2: Log the decisions (for debugging)
   log-decisions:
@@ -53,6 +65,63 @@ jobs:
           echo "  Coverage:  ${{ needs.controller.outputs.activate_code_coverage }}"
           echo ""
           echo "============================================"
+
+  # Step 2b: Enforce commit conventions (canonical form, see commitlint.config.js)
+  commit-lint:
+    name: Commit Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint push commits
+        if: github.event_name == 'push'
+        run: |
+          FROM="${{ github.event.before }}"
+          if [[ "$FROM" == "0000000000000000000000000000000000000000" ]]; then
+            # First push of a branch: only the last commit exists locally
+            npx commitlint --from HEAD~1 --to HEAD --verbose
+          else
+            npx commitlint --from "$FROM" --to HEAD --verbose
+          fi
+
+      - name: Lint PR title
+        if: github.event_name == 'pull_request'
+        run: printf '%s' "${{ github.event.pull_request.title }}" | npx commitlint
+
+  # Step 2c: Validate metadata.json against the machine-readable contract
+  schema-check:
+    name: Metadata Schema
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate metadata.json
+        run: npx ajv validate -s metadata.schema.json -d metadata.json --spec=draft7
 
   # Step 3: Trigger downstream workflows based on controller outputs
   
