@@ -59,7 +59,7 @@ template <typename T> auto test_sum(const std::vector<T>& vec) {
 template <typename T> class Color {
   public:
     Color() = default;
-    Color(T r, T g, T b) : r(r), g(g), b(b) {};
+    Color(T red_, T green_, T blue_) : r(red_), g(green_), b(blue_) {};
     void set(T r, T g, T b) {
         this->r = r;
         this->g = g;
@@ -69,7 +69,9 @@ template <typename T> class Color {
     auto components() const { return std::make_tuple(r, g, b); };
 
   private:
-    T r{}, g{}, b{};
+    T r{};
+    T g{};
+    T b{};
 };
 
 

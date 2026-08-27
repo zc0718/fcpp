@@ -1,15 +1,8 @@
 // Conan::ImportStart
 #pragma once
-// #include <dlib/dnn.h>
-// #include <dlib/matrix.h>
 // Conan::ImportEnd
 
-// using minimal_net = dlib::loss_multiclass_log<
-//                     dlib::fc<10,
-//                     dlib::input<dlib::matrix<unsigned char>>
-//                     >>;
-
-
+// 模板示例模块：minimal_net 类型定义（dlib 示例）已移除，可追溯 git 历史。
 
 void train_with_random_data();
 

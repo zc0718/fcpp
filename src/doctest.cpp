@@ -9,11 +9,15 @@ auto version_test_func() { std::cout << "the version_test_func function" << '\n'
 
 
 
-void stage_a() {}
+void stage_a() {
+    // 有意留空：doctest 分阶段演示的占位步骤，调用关系见 stage_d。
+}
 
 
 
-void stage_b() {}
+void stage_b() {
+    // 有意留空：doctest 分阶段演示的占位步骤，调用关系见 stage_d。
+}
 
 
 

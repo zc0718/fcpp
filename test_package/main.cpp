@@ -6,7 +6,6 @@
 #include <fstream>
 #include "cpptest.hpp"
 #include "net.hpp"
-// import "hello.hpp"; // C++23 only
 
 
 
@@ -51,12 +50,9 @@ int main() {
     const Person alice("Alice", 25);
     std::cout << alice.greet() << std::endl;
 
-    const Color<int> red(255, 0, 0);
+    const Color red(255, 0, 0);
     red.print();
 
-    // train_with_random_data();
-
-    // int prediction = predict_random_sample();
     int prediction = 3;  // skip net.cpp CI
 
     std::cout << "prediction result for random sample: " << prediction << std::endl;

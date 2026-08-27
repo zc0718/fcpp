@@ -30,8 +30,10 @@ void test_c_compiler() {
  */
 void test_c_zlib() {
     char in[] = "Hello, zlib in C!";
-    Byte out[128], rec[128];
-    uLong len_out = 128, len_rec = 128;
+    Byte out[128];
+    Byte rec[128];
+    uLong len_out = 128;
+    uLong len_rec = 128;
     compress(out, &len_out, in, strlen(in) + 1);
     uncompress(rec, &len_rec, out, len_out);
     printf("Original: %s; Decompressed: %s; zlib in C test done!\n", in, rec);

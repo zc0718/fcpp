@@ -1,4 +1,5 @@
 // Conan::ImportStart
+#include <array>
 #include <iostream>
 #include <string>
 #ifndef __ARM_EABI__
@@ -56,22 +57,24 @@ std::string Person::greet() const { return "Hello, I'm " + name; };
  */
 void test_cpp_zlib() {
     const char in[] = "Hello, zlib in CPP!";
-    unsigned char out[128] = {0};
-    unsigned char rec[128] = {0};
-    uLong len_out = sizeof(out);
-    uLong len_rec = sizeof(rec);
-    int compress_result =
-        compress(out, &len_out, reinterpret_cast<const Bytef*>(in), static_cast<uLong>(strlen(in) + 1));
-    if (compress_result != Z_OK) {
+    std::array<unsigned char, 128> out{};
+    std::array<unsigned char, 128> rec{};
+    uLong len_out = static_cast<uLong>(out.size());
+    uLong len_rec = static_cast<uLong>(rec.size());
+    if (int compress_result = compress(out.data(), &len_out,
+                                       reinterpret_cast<const Bytef*>(in),
+                                       static_cast<uLong>(sizeof(in)));
+        compress_result != Z_OK) {
         std::cerr << "Compression failed with error code: " << compress_result << '\n';
         return;
     }
-    int uncompress_result = uncompress(rec, &len_rec, reinterpret_cast<const Bytef*>(out), len_out);
-    if (uncompress_result != Z_OK) {
+    if (int uncompress_result = uncompress(rec.data(), &len_rec,
+                                           reinterpret_cast<const Bytef*>(out.data()), len_out);
+        uncompress_result != Z_OK) {
         std::cerr << "Decompression failed with error code: " << uncompress_result << '\n';
         return;
     }
-    std::cout << "Original: " << in << "; Decompressed: " << reinterpret_cast<char*>(rec) << "; zlib in C++ test done!"
-              << '\n';
+    std::cout << "Original: " << in << "; Decompressed: " << reinterpret_cast<char*>(rec.data())
+              << "; zlib in C++ test done!" << '\n';
 }
 #endif /* __ARM_EABI__ */

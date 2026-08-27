@@ -1,56 +1,19 @@
 // Conan::ImportStart
 #include "net.hpp"
-// #include <dlib/rand.h>
 #include <iostream>
 #include <vector>
 // Conan::ImportEnd
 
 
-
-// dlib::matrix<unsigned char> generate_random_image(dlib::rand& rnd) {
-//     dlib::matrix<unsigned char> img(28, 28);
-//     for (long r = 0; r < img.nr(); ++r) {
-//         for (long c = 0; c < img.nc(); ++c) {
-//             img(r, c) = static_cast<unsigned char>(rnd.get_random_8bit_number());
-//         }
-//     }
-//     return img;
-// }
-
-
-
+// 模板示例模块：dlib 神经网络示例实现已移除（可追溯 git 历史）。
+// 保留占位实现以保证 net.hpp 声明的符号存在。
 void train_with_random_data() {
-    // dlib::rand rnd;
-    // std::vector<dlib::matrix<unsigned char>> images;
-    // std::vector<unsigned long> labels;
-
-    // for (int i = 0; i < 1000; ++i) {
-    //     images.push_back(generate_random_image(rnd));  // random images
-    //     labels.push_back(rnd.get_integer_in_range(0, 10)); // random labels
-    // }
-
-    // minimal_net net;
-    // dlib::dnn_trainer<minimal_net> trainer(net);
-
-    // trainer.set_learning_rate(0.01);
-    // trainer.set_mini_batch_size(32);
-    // trainer.set_max_num_epochs(2);
-
-    // trainer.train(images, labels);
-
-    // dlib::serialize("random_model.dat") << net;
-    // std::cout << "training done，model has been saved as random_model.dat" << std::endl;
+    // 占位实现：训练逻辑为空，示例见历史提交中的 dlib::dnn_trainer 用法。
 }
 
 
 
 int predict_random_sample() {
-    // minimal_net net;
-    // dlib::deserialize("random_model.dat") >> net;
-
-    // dlib::rand rnd;
-    // dlib::matrix<unsigned char> test_img = generate_random_image(rnd);
-
-    // return net(test_img);
-    return 0; // placeholder
+    // 占位实现：返回固定值，示例见历史提交中的 dlib::deserialize 用法。
+    return 0;
 }

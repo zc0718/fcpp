@@ -13,7 +13,7 @@ int sleep(int n) {
 
 
 void net_predict() {
-    // int prediction = predict_random_sample();
+    // 占位：net.cpp 的 predict_random_sample 当前为固定返回值，无需调用。
 }
 
 
