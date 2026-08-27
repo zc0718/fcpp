@@ -15,6 +15,7 @@
  * ============================================================
  */
 #include <stdint.h>
+#include <array>
 #include "core/het_bench_core.h"
 
 // Include algorithm headers here. For example:
@@ -25,42 +26,55 @@
  * USER ZONE (algorithm engineer edits only this block)
  * ============================================================ */
 
-#define MODULE_NAME "LibBench"
+constexpr const char *MODULE_NAME = "LibBench";
+constexpr uint32_t BENCH_VECTOR_LEN = 128U;
 
-enum {
-	BENCH_VECTOR_LEN = 128U,
+namespace {
+struct BenchState {
+	std::array<float, BENCH_VECTOR_LEN> a;
+	std::array<float, BENCH_VECTOR_LEN> b;
+	std::array<float, BENCH_VECTOR_LEN> y;
 };
 
-static float g_a[BENCH_VECTOR_LEN];
-static float g_b[BENCH_VECTOR_LEN];
-static float g_y[BENCH_VECTOR_LEN];
+BenchState &bench_state(void)
+{
+	// 函数级 static：替代文件级可变全局，避免跨翻译单元状态污染。
+	static BenchState state = {};
+	return state;
+}
+}  // namespace
 
 static void bench_prepare_input(void)
 {
 	for (uint32_t i = 0U; i < BENCH_VECTOR_LEN; ++i) {
-		g_a[i] = (float)i * 0.25f;
-		g_b[i] = (float)(BENCH_VECTOR_LEN - i) * 0.5f;
-		g_y[i] = 0.0f;
+		bench_state().a[i] = (float)i * 0.25f;
+		bench_state().b[i] = (float)(BENCH_VECTOR_LEN - i) * 0.5f;
+		bench_state().y[i] = 0.0f;
 	}
 }
 
+// NOSONAR: ctx 为 het_bench_core.h pFunCase ABI 的 opaque 上下文，跨语言二进制兼容所需。
 static int bench_add_case(const void * const ctx)
 {
 	(void)ctx;
-	fcpp_vec_add_f32(g_a, g_b, g_y, BENCH_VECTOR_LEN);
-	return g_y[0] == (g_a[0] + g_b[0]);
+	fcpp_vec_add_f32(bench_state().a.data(), bench_state().b.data(),
+	                 bench_state().y.data(), BENCH_VECTOR_LEN);
+	return bench_state().y[0] == (bench_state().a[0] + bench_state().b[0]);
 }
 
+// NOSONAR: ctx 为 het_bench_core.h pFunCase ABI 的 opaque 上下文，跨语言二进制兼容所需。
 static int bench_sub_case(const void * const ctx)
 {
 	(void)ctx;
-	fcpp_vec_sub_f32(g_a, g_b, g_y, BENCH_VECTOR_LEN);
-	return g_y[0] == (g_a[0] - g_b[0]);
+	fcpp_vec_sub_f32(bench_state().a.data(), bench_state().b.data(),
+	                 bench_state().y.data(), BENCH_VECTOR_LEN);
+	return bench_state().y[0] == (bench_state().a[0] - bench_state().b[0]);
 }
 
+// NOSONAR: 必须保持 C 数组 —— BENCHMARK_IMPLEMENTATION 宏以 C 兼容聚合方式消费（.table + sizeof/count）。
 static const Case bench_table[] = {
-	BENCHMARK_CASE_IMPLEMENTATION("test_add_n128", 0, bench_add_case, 100U),
-	BENCHMARK_CASE_IMPLEMENTATION("test_sub_n128", 0, bench_sub_case, 100U),
+	BENCHMARK_CASE_IMPLEMENTATION("test_add_n128", nullptr, bench_add_case, 100U),
+	BENCHMARK_CASE_IMPLEMENTATION("test_sub_n128", nullptr, bench_sub_case, 100U),
 };
 
 

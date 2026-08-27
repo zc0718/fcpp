@@ -20,22 +20,21 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <time.h>
+#include <chrono>
 #include "core/het_bench_core.h"
 
 /* bench_module_entry 由 bench_entry.c 中的 BENCHMARK_IMPLEMENTATION 宏定义 */
 extern int bench_module_entry(const HostInterface *hostApi);
 
 /**
- * 计时：CLOCK_MONOTONIC，单位微秒（µs）。
+ * 计时：steady_clock（Linux 上为 CLOCK_MONOTONIC），单位微秒（µs）。
  * uint32_t 可容纳约 71 分钟；benchmark 用例通常在秒级内完成，不会溢出。
  */
 static uint32_t linux_get_ticks(void)
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint32_t)((uint64_t)ts.tv_sec * 1000000ULL
-                    + (uint64_t)ts.tv_nsec / 1000ULL);
+    using namespace std::chrono;
+    const auto us = duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
+    return static_cast<uint32_t>(us);
 }
 
 /**
