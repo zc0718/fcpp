@@ -33,6 +33,8 @@ REPOSITORY_SEMGREP_ARGUMENTS:
   - "--include"
   - "src/"
 
+REPOSITORY_CHECKOV_CONFIG_FILE: ".github/misc/.checkov.yml"
+
 REPOSITORY_CHECKOV_ARGUMENTS:
   - "-d"
   - "."
